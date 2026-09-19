@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0072ff">
+<title>कोडिंग लवर</title>
+<script src="https://js.puter.com/v2/"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%);color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden;position:fixed;width:100%}
+.header{padding:10px 12px;background:linear-gradient(90deg,#00c6ff 0%,#0072ff 100%);display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:10;flex-shrink:0;gap:6px}
+.header h1{font-size:1em;font-weight:700;flex:1;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.icon-btn{background:rgba(255,255,255,.2);border:none;color:#fff;width:36px;height:36px;border-radius:8px;font-size:1em;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.icon-btn.active{background:rgba(39,174,96,.8)}
+.sidebar{position:fixed;top:0;left:-280px;width:280px;height:100vh;background:#16213e;z-index:200;transition:left .3s ease;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.5)}
+.sidebar.open{left:0}
+.sidebar-header{padding:16px;background:linear-gradient(90deg,#00c6ff,#0072ff);display:flex;justify-content:space-between;align-items:center}
+.sidebar-header h2{font-size:1.1em}
+.close-sidebar{background:transparent;border:none;color:#fff;font-size:1.4em;cursor:pointer;padding:4px 8px}
+.sidebar-new{padding:12px 16px}
+.sidebar-new button{width:100%;padding:12px;background:linear-gradient(90deg,#00c6ff,#0072ff);color:#fff;border:none;border-radius:10px;font-size:.95em;font-weight:600;cursor:pointer}
+.sessions-list{flex:1;overflow-y:auto;padding:8px 12px}
+.session-item{padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.05);border-radius:10px;cursor:pointer;font-size:.9em;display:flex;justify-content:space-between;align-items:center;gap:8px;border-left:3px solid transparent}
+.session-item.active{background:rgba(0,198,255,.15);border-left-color:#00c6ff}
+.session-item .title{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.session-item .delete-btn{background:transparent;border:none;color:rgba(255,255,255,.5);font-size:1em;cursor:pointer;padding:2px 6px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150}
+.overlay.open{display:block}
+.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+.message{max-width:88%;padding:12px 16px;border-radius:16px;line-height:1.6;word-wrap:break-word;font-size:.95em;animation:slideIn .3s ease;position:relative}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.message.user{align-self:flex-end;background:linear-gradient(135deg,#00c6ff,#0072ff);color:#fff;border-bottom-right-radius:4px}
+.message.assistant{align-self:flex-start;background:#ffffff;border-left:4px solid #00c6ff;border-bottom-left-radius:4px;color:#000000}
+.message.error-box{background:#ffe8e8;border-left-color:#e74c3c;color:#8b0000;font-size:.85em;padding-right:16px}
+.message pre{background:#f0f0f0;color:#000;padding:10px;border-radius:8px;margin:8px 0;overflow-x:auto;font-size:.85em;font-family:'Consolas',monospace}
+.message code{background:#e8e8e8;color:#c0392b;padding:2px 6px;border-radius:4px;font-size:.9em;font-family:'Consolas',monospace}
+.message img,.message video{max-width:100%;border-radius:10px;margin-top:8px;max-height:400px}
+.message audio{width:100%;margin-top:8px}
+.brain-tag{display:inline-block;font-size:.7em;padding:2px 8px;background:rgba(0,198,255,.2);border-radius:10px;margin-bottom:6px;color:#0072ff;font-weight:700}
+.msg-text{display:block;font-size:1em;line-height:1.7;color:#000}
+.speak-row{margin-top:10px}
+.speak-btn{background:#e3f2fd;border:1px solid #00c6ff;color:#0072ff;padding:6px 14px;border-radius:18px;cursor:pointer;font-size:.85em;font-weight:600}
+.speak-btn.speaking{background:#00c6ff;color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}.file-preview{padding:8px 12px;background:rgba(0,198,255,.1);border-top:1px solid rgba(0,198,255,.3);display:none;flex-shrink:0}
+.file-preview.show{display:block}
+.file-info{display:flex;align-items:center;gap:10px;font-size:.85em}
+.file-icon{font-size:1.8em}
+.file-details{flex:1;overflow:hidden}
+.file-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-size:.75em;color:rgba(255,255,255,.6);margin-top:2px}
+.file-remove{background:rgba(231,76,60,.3);border:none;color:#fff;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:.9em}
+.file-thumb{width:50px;height:50px;border-radius:6px;object-fit:cover}
+.screen-status{padding:6px 12px;background:rgba(39,174,96,.2);border-top:1px solid rgba(39,174,96,.4);display:none;align-items:center;justify-content:space-between;font-size:.85em;flex-shrink:0}
+.screen-status.show{display:flex}
+.screen-status .dot{display:inline-block;width:8px;height:8px;background:#27ae60;border-radius:50%;margin-right:6px;animation:pulse 1.5s infinite}
+.screen-stop{background:rgba(231,76,60,.3);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.8em}
+.input-area{padding:10px 12px 14px;background:rgba(0,0,0,.4);border-top:1px solid rgba(255,255,255,.1);flex-shrink:0}
+.lang-row{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.lang-row::-webkit-scrollbar{display:none}
+.lang-chip{padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;font-size:.75em;white-space:nowrap;color:#fff;cursor:pointer}
+.lang-chip.active{background:linear-gradient(90deg,#00c6ff,#0072ff);border-color:transparent}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+textarea{flex:1;padding:12px 16px;background:rgba(255,255,255,.15);border:2px solid rgba(0,198,255,.5);border-radius:22px;color:#fff;font-family:inherit;font-size:1em;font-weight:500;resize:none;min-height:46px;max-height:120px;line-height:1.4;caret-color:#00c6ff}
+textarea:focus{outline:none;border-color:#00c6ff;background:rgba(255,255,255,.2);box-shadow:0 0 12px rgba(0,198,255,.4)}
+textarea::placeholder{color:rgba(255,255,255,.55)}
+textarea.listening{border-color:#e74c3c;box-shadow:0 0 15px rgba(231,76,60,.5);animation:listen 1.5s infinite}
+@keyframes listen{0%,100%{box-shadow:0 0 15px rgba(231,76,60,.5)}50%{box-shadow:0 0 25px rgba(231,76,60,.9)}}
+.attach-btn,.screen-btn,.mic-btn,.send-btn{width:46px;height:46px;border:none;border-radius:50%;font-size:1.2em;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+.attach-btn{background:rgba(255,255,255,.1)}
+.attach-btn.has-file{background:#27ae60}
+.screen-btn{background:rgba(255,255,255,.1)}
+.screen-btn.active{background:#27ae60;animation:pulse 1.5s infinite}
+.mic-btn{background:rgba(255,255,255,.1)}
+.mic-btn.recording{background:#e74c3c;animation:pulse 1s infinite}
+.send-btn{background:linear-gradient(135deg,#00c6ff,#0072ff)}
+.send-btn:disabled{opacity:.4}
+.typing-dot{display:inline-block;width:6px;height:6px;margin:0 2px;background:#00c6ff;border-radius:50%;animation:blink 1.4s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;padding:20px;overflow-y:auto}
+.modal.open{display:block}
+.modal-content{max-width:500px;margin:20px auto;background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid rgba(0,198,255,.3)}
+.modal h2{color:#00c6ff;margin-bottom:8px;font-size:1.3em}
+.modal p{color:rgba(255,255,255,.7);font-size:.85em;margin-bottom:16px;line-height:1.5}
+.modal label{display:block;color:#00c6ff;font-size:.85em;margin:14px 0 6px;font-weight:600}
+.modal input{width:100%;padding:10px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:.9em;font-family:monospace}
+.modal input:focus{outline:none;border-color:#00c6ff}
+.modal .hint{font-size:.75em;color:rgba(255,255,255,.5);margin-top:4px}
+.modal .hint a{color:#00c6ff;text-decoration:none}
+.modal-buttons{display:flex;gap:10px;margin-top:22px}
+.modal-buttons button{flex:1;padding:12px;border:none;border-radius:10px;font-size:.95em;font-weight:600;cursor:pointer}
+.btn-primary{background:linear-gradient(135deg,#00c6ff,#0072ff);color:#fff}
+.btn-secondary{background:rgba(255,255,255,.1);color:#fff}
+.btn-test{background:rgba(39,174,96,.3);color:#fff;margin-top:12px;width:100%;padding:10px;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.welcome{text-align:center;padding:20px;color:rgba(255,255,255,.7)}
+.welcome h2{color:#00c6ff;margin-bottom:10px;font-size:1.4em}
+.welcome .examples{display:grid;gap:8px;margin-top:20px;text-align:left}
+.example{padding:12px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:.85em;cursor:pointer;color:#fff}
+.i2v-box{background:#fff8e1;border:1px solid #ffc800;border-radius:12px;padding:14px;margin-top:10px;color:#000}
+.i2v-box h4{color:#b8860b;font-size:.9em;margin-bottom:10px}
+.i2v-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.i2v-btn{padding:12px;background:linear-gradient(135deg,#00c6ff,#0072ff);color:#fff;border:none;border-radius:8px;font-size:.85em;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;display:block}
+.i2v-btn.free{background:linear-gradient(135deg,#27ae60,#229954)}
+.ask-box{background:#fff8e1;border:1px solid #ffc800;border-radius:12px;padding:14px;margin-top:10px;color:#000}
+.ask-box h4{color:#b8860b;font-size:.9em;margin-bottom:10px}
+.ask-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ask-btn{padding:12px;background:linear-gradient(135deg,#ffc800,#ff9800);color:#1a1a2e;border:none;border-radius:8px;font-size:.85em;font-weight:700;cursor:pointer;text-align:center}
+</style>
+</head>
+<body><div class="header">
+<button class="icon-btn" onclick="toggleSidebar()">☰</button>
+<h1 id="chatTitle">⚡ कोडिंग लवर</h1>
+<button class="icon-btn" onclick="newChat()">➕</button>
+<button class="icon-btn" id="autoSpeakBtn" onclick="toggleAutoSpeak()" title="ऑटो-स्पीक">🔇</button>
+<button class="icon-btn" onclick="openSettings()">⚙️</button>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<h2>💬 बातचीत</h2>
+<button class="close-sidebar" onclick="toggleSidebar()">✕</button>
+</div>
+<div class="sidebar-new">
+<button onclick="newChat()">➕ नई बातचीत</button>
+</div>
+<div class="sessions-list" id="sessionsList"></div>
+</div>
+
+<div class="messages" id="messages">
+<div class="welcome">
+<h2>नमस्ते! मैं कोडिंग लवर हूँ 💻</h2>
+<p>बात करो, पूछो, बनवाओ — सब ख़ुद समझ लूँगा।</p>
+<div class="examples">
+<div class="example" onclick="useExample(this)">पाइथन में फ़ाइबोनैचि लिखो</div>
+<div class="example" onclick="useExample(this)">एक बिल्ली की तस्वीर बनाओ</div>
+<div class="example" onclick="useExample(this)">समुद्र का वीडियो बनाओ</div>
+<div class="example" onclick="useExample(this)">गिटार वाला संगीत बनाओ</div>
+</div>
+</div>
+</div>
+
+<div class="file-preview" id="filePreview">
+<div class="file-info">
+<div id="fileIcon" class="file-icon">📄</div>
+<img id="fileThumb" class="file-thumb" style="display:none">
+<div class="file-details">
+<div class="file-name" id="fileName">file</div>
+<div class="file-size" id="fileSize">0 KB</div>
+</div>
+<button class="file-remove" onclick="removeFile()">✕</button>
+</div>
+</div>
+
+<div class="screen-status" id="screenStatus">
+<div><span class="dot"></span> स्क्रीन शेयर चालू — बोलते ही स्क्रीनशॉट जाएगा</div>
+<button class="screen-stop" onclick="stopScreenShare()">बंद करो</button>
+</div>
+
+<div class="input-area">
+<div class="lang-row" id="langRow">
+<div class="lang-chip active" data-lang="hi-IN">हिंदी</div>
+<div class="lang-chip" data-lang="en-US">English</div>
+<div class="lang-chip" data-lang="bn-IN">বাংলা</div>
+<div class="lang-chip" data-lang="ta-IN">தமிழ்</div>
+<div class="lang-chip" data-lang="te-IN">తెలుగు</div>
+<div class="lang-chip" data-lang="mr-IN">मराठी</div>
+<div class="lang-chip" data-lang="gu-IN">ગુજરાતી</div>
+<div class="lang-chip" data-lang="kn-IN">ಕನ್ನಡ</div>
+<div class="lang-chip" data-lang="ml-IN">മലയാളം</div>
+</div>
+<div class="input-row">
+<input type="file" id="fileInput" style="display:none" accept="image/*,video/*,audio/*,.pdf,.txt,.doc,.docx,.csv,.json,.py,.js,.java,.cpp,.html,.css,.xml,.md" onchange="handleFileSelect(event)">
+<button class="attach-btn" id="attachBtn" onclick="document.getElementById('fileInput').click()">📎</button>
+<button class="screen-btn" id="screenBtn" onclick="toggleScreenShare()" title="स्क्रीन शेयर">📱</button>
+<textarea id="input" placeholder="कुछ भी पूछो... (🎤 दबाकर बोल सकते हो)" rows="1"></textarea>
+<button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+<button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+</div>
+</div>
+
+<div class="modal" id="settingsModal">
+<div class="modal-content">
+<h2>⚙️ सेटिंग्स</h2>
+<p>सब कुछ मुफ़्त। कोई कार्ड नहीं, कोई बिल नहीं।</p>
+
+<label>🔍 जेमिनी API Key (मुख्य दिमाग़)</label>
+<input type="password" id="geminiKey" placeholder="AIza... या AQ...">
+<div class="hint">मुफ़्त: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></div>
+
+<label>⚡ ग्रोक API Key (बैकअप)</label>
+<input type="password" id="groqKey" placeholder="gsk_...">
+<div class="hint">मुफ़्त: <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a></div>
+
+<label>🎨 Agnes AI Key (तस्वीर बनाना + एडिट)</label>
+<input type="password" id="agnesKey" placeholder="sk-...">
+<div class="hint">मुफ़्त: <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a></div>
+
+<button class="btn-test" onclick="testKeys()">🔬 चाबियाँ जाँचो</button>
+<div class="modal-buttons">
+<button class="btn-secondary" onclick="closeSettings()">रद्द</button>
+<button class="btn-primary" onclick="saveSettings()">सहेजो</button>
+</div>
+</div>
+</div><script>
+var STORAGE_KEY = "coding_lover_v30";
+var CHATS_KEY = "coding_lover_chats_v1";
+var currentLang = "hi-IN";
+var messagesEl = document.getElementById("messages");
+var currentChatId = null;
+var allChats = {};
+var recognition = null;
+var isRecording = false;
+var autoSpeak = false;
+var currentUtterance = null;
+var attachedFile = null;
+var lastGeneratedImageUrl = null;
+var pendingVideoPrompt = "";
+var screenStream = null;
+var pendingScreenshot = null;
+
+var CAPABILITY = "तुम 'कोडिंग लवर' हो — एक पूरा AI सहायक, सिर्फ़ चैटबॉट नहीं। तुम्हारे पास ये सब क्षमताएँ हैं:\n" +
+    "• तस्वीर बनाना (Agnes Image 2.5 Flash — 2K डिटेल)\n• वीडियो बनाना (Veo 3.1 — 8 सेकंड, ब्लर नहीं)\n• फ़ोटो एडिट करना (Agnes से)\n• फ़ोटो से वीडियो (Kling AI के ज़रिए)\n• स्क्रीन शेयर — स्क्रीन देखकर बताना\n• संगीत बजाना\n• कोड लिखना\n• फ़ाइल/PDF देखना\n• इंटरनेट खोज\n• हर भाषा में बात\n\n" +
+    "तुम्हारा नाम 'कोडिंग लवर' है। तुम्हें मिस्टर आयुष राज (Mister Aayush Raj) ने बनाया है। उन्होंने बहुत जटिल कोडिंग करके तुम्हें बनाया है। अगर कोई पूछे 'तुम्हें किसने बनाया?' या 'तुम्हारा मालिक कौन है?' या 'creator' या 'किसने बनाया' — तो गर्व से कहो: 'मुझे मिस्टर आयुष राज ने बनाया है — उन्होंने बहुत जटिल कोडिंग करके मुझे बनाया है।' कभी किसी और कंपनी या व्यक्ति का नाम मत लो।\n\n" +
+    "बहुत ज़रूरी — हिंदी के नियम:\n" +
+    "• 'नहीं', 'मत' — इनकार हैं। इनकार वाले वाक्य में कुछ मत बनाओ।\n" +
+    "• 'क्यों', 'कैसे', 'क्या', 'कौन' — सवाल हैं। जवाब दो, मत बनाओ।\n" +
+    "• 'बनाओ', 'लिखो', 'बजाओ' — हुक्म हैं। सिर्फ़ तब बनाओ जब इनकार और सवाल न हों।\n" +
+    "• संदेह हो — पूछो, मत बनाओ।\n" +
+    "• समझ न आए — साफ़ कहो: 'माफ़ करना, मैं समझ नहीं पाया। कृपया फिर से बताओ।'\n\n" +
+    "बातचीत की यादश्त:\n" +
+    "• तुम्हें पूरी बातचीत दिख रही है। पिछले संदेशों को ध्यान से पढ़ो।\n" +
+    "• अगर उपयोगकर्ता कहे 'इसी प्रॉम्प्ट से', 'इसका', 'उसका', 'पहले वाला' — तो पिछले संदेशों में वह प्रॉम्प्ट ढूँढो और वही इस्तेमाल करो।\n\n";
+
+function loadKeys() {
+    try { var s = localStorage.getItem(STORAGE_KEY); if (s) return JSON.parse(s); } catch(e) {}
+    return { gemini: "", groq: "", agnes: "" };
+}
+function saveKeysToStorage(keys) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(keys)); } catch(e) {}
+}
+function openSettings() {
+    var keys = loadKeys();
+    document.getElementById("geminiKey").value = keys.gemini || "";
+    document.getElementById("groqKey").value = keys.groq || "";
+    document.getElementById("agnesKey").value = keys.agnes || "";
+    document.getElementById("settingsModal").classList.add("open");
+}
+function closeSettings() { document.getElementById("settingsModal").classList.remove("open"); }
+function saveSettings() {
+    var keys = {
+        gemini: document.getElementById("geminiKey").value.trim(),
+        groq: document.getElementById("groqKey").value.trim(),
+        agnes: document.getElementById("agnesKey").value.trim()
+    };
+    saveKeysToStorage(keys);
+    closeSettings();
+    addMessage("assistant", "✅ चाबियाँ सहेज लीं!");
+}
+async function testKeys() {
+    var m = document.getElementById("geminiKey").value.trim();
+    var g = document.getElementById("groqKey").value.trim();
+    var a = document.getElementById("agnesKey").value.trim();
+    var msg = "🔬 जाँच:\n\n";
+    msg += m ? "✅ जेमिनी\n" : "⚠️ जेमिनी नहीं\n";
+    msg += g && g.indexOf("gsk_")===0 ? "✅ ग्रोक\n" : (g ? "⚠️ ग्रोक: gsk_ नहीं\n" : "");
+    msg += a && a.indexOf("sk-")===0 ? "✅ Agnes (तस्वीर)" : "⚠️ Agnes नहीं";
+    alert(msg);
+}async function understandIntent(text, keys) {
+    var t = text.toLowerCase().trim();
+    var clean = t.replace(/[?!.,;:]+/g, " ").replace(/\s+/g, " ").trim();
+
+    var hasNegation = /(\bnahi\b|\bnahin\b|\bnai\b|\bmat\b|\bna\b|नहीं|नहि|मत|\bdon'?t\b|\bnot\b|\bno\b)/.test(clean);
+    if (hasNegation) return "CHAT";
+
+    var hasQuestionWord = /(\bkyun\b|\bkyu\b|\bkyon\b|क्यों|क्यूं|\bkaise\b|कैसे|\bkab\b|कब|\bkahan\b|कहाँ|\bkaun\b|कौन|\bkya\b|क्या|\bkaisa\b|\bkaisi\b|कैसा|कैसी|\bpoochh\b|पूछ|\bsawaal\b|सवाल|\bbatao\b|बताओ|\bsamjhao\b|समझाओ|\btumhara\b|तुम्हारा|तुम क्या|कर सकते|बना सकते|सकते हो|सकते हैं|हो सकता है|tum kya|tum kaun|kisne banaya|किसने बनाया|creator|malik|मालिक)/.test(clean);
+    var hasQuestionMark = /\?/.test(clean);
+    var isImperative = /^(banao|banaao|bana do|bana de|banade|generate|create|make|draw|likho|likh do|bajao|baja do|suna|sunao|बनाओ|बना दो|बना दे|लिखो|लिख दो|बजाओ|बजा दो|सुनाओ|सुना)\s*/.test(clean);
+    if ((hasQuestionWord || hasQuestionMark) && !isImperative) return "QUESTION";
+
+    if (/^(tasveer|image|photo|chitra|तस्वीर|चित्र|फोटो|picture|video|वीडियो|music|song|gaan|गाना|संगीत|म्यूजिक|धुन|code|कोड|program|प्रोग्राम)\s*$/.test(clean)) return "ASK_SUBJECT";
+    if (/^(banao|banaao|bana do|bana de|banade|banaa|बनाओ|बना दो|बना दे|बनाएं|bajao|bajaa|बजाओ|suna|sunao|सुना|सुनाओ|likho|लिखो)\s*$/.test(clean)) return "ASK_WHAT";
+
+    var hasAction = /(\bbanao\b|\bbanaao\b|\bbana do\b|\bbana de\b|\bbanade\b|generate|create|make|draw|design|\blikho\b|\blikh do\b|\bbajao\b|\bbajaa\b|\bbaja do\b|\bsuna\b|\bsunao\b|animate|एनिमेट|बनाओ|बना दो|बना दे|लिखो|लिख दो|बजाओ|बजा दो|सुनाओ|सुना)/.test(clean);
+    var hasImage = /(tasveer|image|photo|chitra|तस्वीर|चित्र|फोटो|picture|portrait)/.test(clean);
+    var hasVideo = /(video|वीडियो|movie|फ़िल्म|film|clip|animation|एनिमेशन)/.test(clean);
+    var hasMusic = /(music|song|gaan|गाना|संगीत|म्यूजिक|धुन|melody|tune|instrumental)/.test(clean);
+    var hasCode = /(code|कोड|program|प्रोग्राम|function|फंक्शन|script|python|javascript|java|cpp|html|css|react|node|sql|api)/.test(clean);
+
+    var refersBack = /(isi|isise|इसी|iska|इसका|uska|उसका|us se|उस से|pehle|पहले|same|वही|yeh|यह|yah|woh|वो|वह)/.test(clean);
+
+    if (refersBack && hasAction && hasVideo) return "CREATE_VIDEO_FROM_HISTORY";
+    if (refersBack && hasAction && hasImage) return "CREATE_IMAGE_FROM_HISTORY";
+    if (refersBack && hasAction && hasMusic) return "CREATE_MUSIC_FROM_HISTORY";
+
+    if (hasAction && hasImage) return "CREATE_IMAGE";
+    if (hasAction && hasVideo) return "CREATE_VIDEO";
+    if (hasAction && hasMusic) return "CREATE_MUSIC";
+    if (hasAction && hasCode) return "CREATE_CODE";
+
+    if (hasAction && clean.length < 45) return "CHECK_HISTORY_FOR_PROMPT";
+
+    var history = getHistoryForLLM(10);
+    var histText = "";
+    for (var h = 0; h < history.length; h++) {
+        histText += (history[h].role === "user" ? "उपयोगकर्ता: " : "AI: ") + history[h].content.substring(0, 200) + "\n";
+    }
+    var classify = "पिछली बातचीत:\n" + histText + "\n\nअब उपयोगकर्ता ने लिखा: \"" + text + "\"\n\nसिर्फ़ एक अंग्रेज़ी शब्द लिखो:\nQUESTION\nCREATE_IMAGE\nCREATE_VIDEO\nCREATE_MUSIC\nCREATE_CODE\nCREATE_VIDEO_FROM_HISTORY\nCREATE_IMAGE_FROM_HISTORY\nSEARCH\nASK_SUBJECT\nASK_WHAT\nUNKNOWN\nCHAT\n\nसिर्फ़ एक शब्द।";
+    var ans = "";
+    try { ans = await callGemini(classify, keys); } catch(e) { ans = ""; }
+    if (!ans || ans.length < 2) {
+        try { ans = await callGroq(classify, keys, "Tum intent classifier ho. Sirf ek shabd likho."); } catch(e) { ans = ""; }
+    }
+    ans = String(ans || "").toUpperCase().replace(/[^A-Z_]/g, " ").trim();
+    if (/CREATE_VIDEO_FROM_HISTORY/.test(ans)) return "CREATE_VIDEO_FROM_HISTORY";
+    if (/CREATE_IMAGE_FROM_HISTORY/.test(ans)) return "CREATE_IMAGE_FROM_HISTORY";
+    if (/UNKNOWN/.test(ans)) return "UNKNOWN";
+    if (/QUESTION/.test(ans)) return "QUESTION";
+    if (/CREATE_IMAGE/.test(ans)) return "CREATE_IMAGE";
+    if (/CREATE_VIDEO/.test(ans)) return "CREATE_VIDEO";
+    if (/CREATE_MUSIC/.test(ans)) return "CREATE_MUSIC";
+    if (/CREATE_CODE/.test(ans)) return "CREATE_CODE";
+    if (/SEARCH/.test(ans)) return "SEARCH";
+    if (/ASK_SUBJECT/.test(ans)) return "ASK_SUBJECT";
+    if (/ASK_WHAT/.test(ans)) return "ASK_WHAT";
+    return "CHAT";
+}
+
+async function extractPromptFromHistory(keys, currentText) {
+    var history = getHistoryForLLM(15);
+    if (history.length === 0) return "";
+    var histText = "";
+    for (var h = 0; h < history.length; h++) {
+        histText += (history[h].role === "user" ? "उपयोगकर्ता: " : "AI: ") + history[h].content.substring(0, 500) + "\n";
+    }
+    var prompt = "पिछली बातचीत:\n" + histText + "\n\nउपयोगकर्ता ने अभी कहा: \"" + currentText + "\"\n\n" +
+        "काम: पिछली बातचीत में उपयोगकर्ता ने जो सबसे लंबा/विस्तृत प्रॉम्प्ट, कहानी, या विवरण दिया था — वह शब्द-ब-शब्द लौटाओ।\n\n" +
+        "नियम:\n- 'इसी प्रॉम्प्ट से', 'वीडियो बनाओ', 'तस्वीर बनाओ' जैसी बातें मत लौटाओ।\n- सिर्फ़ असली कहानी/विवरण (कम से कम 20 शब्द)।\n- कुछ न मिले तो सिर्फ़ 'NONE' लिखो।";
+    try {
+        var r = await callGemini(prompt, keys);
+        return String(r || "").trim();
+    } catch(e) {
+        try { return await callGroq(currentText, keys, "पिछली बातचीत देखकर पिछला प्रॉम्प्ट निकालो। सिर्फ़ प्रॉम्प्ट लौटाओ।"); } catch(e2) { return ""; }
+    }
+}
+
+async function callGroq(text, keys, systemPrompt) {
+    if (!keys.groq || keys.groq.indexOf("gsk_") !== 0) throw new Error("ग्रोक चाबी सही नहीं");
+    var models = ["groq/compound", "allam-2-7b", "openai/gpt-oss-safeguard-20b", "qwen/qwen3.8-27b"];
+    var lastErr = "";
+    var history = getHistoryForLLM(10);
+    for (var i = 0; i < models.length; i++) {
+        try {
+            var messages = [{ role: "system", content: systemPrompt }];
+            for (var h = 0; h < history.length; h++) {
+                if (history[h].content && history[h].content.length > 1) {
+                    messages.push({ role: history[h].role, content: history[h].content });
+                }
+            }
+            messages.push({ role: "user", content: text });
+            var resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + keys.groq },
+                body: JSON.stringify({ model: models[i], messages: messages, temperature: 0.3, max_tokens: 8000 })
+            });
+            if (resp.ok) {
+                var d = await resp.json();
+                var msg = d.choices[0].message;
+                var out = msg.content || msg.reasoning_content || msg.reasoning || "";
+                out = String(out || "").replace(/\s+/g, " ").trim();
+                if (out.length > 2) return out;
+                lastErr = models[i] + " — खाली"; continue;
+            }
+            lastErr = models[i] + " — " + resp.status;
+        } catch(e) { lastErr = e.message; }
+    }
+    throw new Error("ग्रोक विफल: " + lastErr);
+}
+
+async function callGemini(text, keys, imageBase64) {
+    if (!keys.gemini) throw new Error("जेमिनी चाबी नहीं");
+    var models = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+    var lastErr = "";
+    var history = getHistoryForLLM(10);
+    for (var i = 0; i < models.length; i++) {
+        try {
+            var contents = [];
+            for (var h = 0; h < history.length; h++) {
+                if (history[h].content && history[h].content.length > 1) {
+                    contents.push({ role: history[h].role === "user" ? "user" : "model", parts: [{ text: history[h].content }] });
+                }
+            }
+            var parts = [{ text: text }];
+            if (imageBase64) {
+                var cleanB64 = imageBase64.split(",")[1] || imageBase64;
+                parts.push({ inline_data: { mime_type: "image/jpeg", data: cleanB64 } });
+            }
+            contents.push({ role: "user", parts: parts });
+            var url = "https://generativelanguage.googleapis.com/v1beta/models/" + models[i] + ":generateContent?key=" + keys.gemini;
+            var resp = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: contents })
+            });
+            if (resp.ok) { var d = await resp.json(); return d.candidates[0].content.parts[0].text; }
+            lastErr = models[i] + " — " + resp.status;
+        } catch(e) { lastErr = e.message; }
+    }
+    throw new Error("जेमिनी विफल: " + lastErr);
+}
+
+async function callImage(text, keys) {
+    if (!keys.agnes || keys.agnes.indexOf("sk-") !== 0) throw new Error("तस्वीर बनाने के लिए Agnes चाबी चाहिए। ⚙️ में डालो।");
+    updateTyping("🎨 Agnes Image से तस्वीर बन रही है... 15-30 सेकंड");
+    var enhancedPrompt = text + ", ultra detailed, high resolution, sharp focus, professional quality, rich textures, natural lighting, intricate details, 8k";
+    var resp = await fetch("https://apihub.agnes-ai.com/v1/images/generations", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + keys.agnes, "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model: "agnes-image-2.5-flash",
+            prompt: enhancedPrompt,
+            size: "2K",
+            ratio: "1:1",
+            extra_body: { response_format: "url" }
+        })
+    });
+    if (!resp.ok) { var eb = await resp.text(); throw new Error("Agnes तस्वीर विफल " + resp.status + ": " + eb.substring(0, 200)); }
+    var data = await resp.json();
+    var imgUrl = (data.data && data.data[0] && data.data[0].url) ? data.data[0].url : null;
+    if (!imgUrl) throw new Error("तस्वीर URL नहीं मिला");
+    lastGeneratedImageUrl = imgUrl;
+    return '<img src="' + imgUrl + '" alt="तस्वीर"><br><small>🎨 Agnes Image 2.5 Flash (2K) — मुफ़्त</small>';
+}
+
+async function callPhotoEdit(file, editPrompt, keys) {
+    if (!keys.agnes || keys.agnes.indexOf("sk-") !== 0) throw new Error("फ़ोटो एडिट के लिए Agnes चाबी चाहिए।");
+    updateTyping("⬆️ फ़ोटो तैयार हो रही है...");
+    var base64Full = await fileToBase64Full(file);
+    updateTyping("✏️ Agnes से फ़ोटो एडिट हो रही है... 20-40 सेकंड");
+    var fullPrompt = "Edit this photo: " + editPrompt + ". CRITICAL: Keep the EXACT SAME person, SAME face, SAME eyes, SAME nose, SAME skin tone, SAME hair, SAME identity. DO NOT change the face. ONLY change what was asked. Preserve everything else exactly as original. Photorealistic, high quality.";
+    var resp = await fetch("https://apihub.agnes-ai.com/v1/images/generations", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + keys.agnes, "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model: "agnes-image-2.5-flash",
+            prompt: fullPrompt,
+            size: "2K",
+            ratio: "1:1",
+            extra_body: { image: [base64Full], response_format: "url" }
+        })
+    });
+    if (!resp.ok) { var eb = await resp.text(); throw new Error("Agnes एडिट विफल " + resp.status + ": " + eb.substring(0, 200)); }
+    var data = await resp.json();
+    var imgUrl = (data.data && data.data[0] && data.data[0].url) ? data.data[0].url : null;
+    if (!imgUrl) throw new Error("एडिट URL नहीं मिला");
+    lastGeneratedImageUrl = imgUrl;
+    return '<img src="' + imgUrl + '" alt="एडिटेड"><br><small>✏️ Agnes से एडिट — चेहरा वही</small>';
+}
+
+async function callVideo(text, keys) {
+    if (typeof puter === "undefined" || !puter.ai || !puter.ai.txt2vid) {
+        throw new Error("Puter.js लोड नहीं हुआ। इंटरनेट जाँचो या पेज रीफ़्रेश करो।");
+    }
+    updateTyping("🎬 Veo 3.1 से वीडियो बन रहा है... 30-60 सेकंड");
+    try {
+        var videoElement = await puter.ai.txt2vid(text, { model: "google/veo-3.1" });
+        var videoUrl = "";
+        if (typeof videoElement === "string") videoUrl = videoElement;
+        else if (videoElement && videoElement.src) videoUrl = videoElement.src;
+        else if (videoElement && videoElement.querySelector) {
+            var src = videoElement.querySelector("source");
+            if (src) videoUrl = src.src;
+        }
+        if (!videoUrl) throw new Error("वीडियो URL नहीं मिला");
+        return '<video controls autoplay loop src="' + videoUrl + '" alt="वीडियो"></video><br><small>✅ Veo 3.1 से बना (8 सेकंड, ब्लर नहीं)</small>';
+    } catch(e) {
+        throw new Error("Veo विफल: " + (e.message || "अज्ञात त्रुटि"));
+    }
+}
+
+function generateMusic(prompt) {
+    return new Promise(function(resolve) {
+        try {
+            var ctx = new (window.AudioContext || window.webkitAudioContext)();
+            var t = prompt.toLowerCase();
+            var wave = "triangle", duration = 0.8, label = "पियानो";
+            if (/(guitar|गिटार)/.test(t)) { wave = "sawtooth"; duration = 0.6; label = "गिटार"; }
+            else if (/(flute|बांसुरी)/.test(t)) { wave = "sine"; duration = 0.5; label = "बांसुरी"; }
+            else if (/(violin|वायलिन)/.test(t)) { wave = "sawtooth"; duration = 0.7; label = "वायलिन"; }
+            else if (/(electronic|इलेक्ट्रॉनिक|edm|synth)/.test(t)) { wave = "square"; duration = 0.3; label = "इलेक्ट्रॉनिक"; }
+            else if (/(drum|ढोल|tabla|beat)/.test(t)) { wave = "square"; duration = 0.15; label = "ढोल"; }
+            var C = 261.63, D = 293.66, E = 329.63, F = 349.23, G = 392.00, A = 440.00, B = 493.88;
+            var scale, tempo;
+            if (/(sad|दुखी|गम)/.test(t)) { scale = [C, D, 311.13, F, G, 415.30, 466.16, 523.25]; tempo = 0.55; }
+            else if (/(happy|खुश|प्यार)/.test(t)) { scale = [C, D, E, F, G, A, B, 523.25]; tempo = 0.32; }
+            else if (/(energetic|तेज़|party|rock)/.test(t)) { scale = [C, D, E, F, G, A, B, 523.25]; tempo = 0.18; }
+            else if (/(calm|शांत|सुकून)/.test(t)) { scale = [C, D, E, F, G, A, B, 523.25]; tempo = 0.75; }
+            else { scale = [C, D, E, G, A, 523.25]; tempo = 0.4; }
+            var numNotes = 20, noteIdx = 2;
+            var startTime = ctx.currentTime + 0.1;
+            for (var i = 0; i < numNotes; i++) {
+                noteIdx = Math.max(0, Math.min(scale.length - 1, noteIdx + Math.floor(Math.random() * 5) - 2));
+                var osc = ctx.createOscillator(); var gain = ctx.createGain();
+                osc.type = wave; osc.frequency.value = scale[noteIdx];
+                var noteStart = startTime + i * tempo;
+                gain.gain.setValueAtTime(0, noteStart);
+                gain.gain.linearRampToValueAtTime(0.15, noteStart + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, noteStart + duration + 0.5);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(noteStart); osc.stop(noteStart + duration + 0.6);
+            }
+            setTimeout(function() { try { ctx.close(); } catch(e) {} }, (numNotes * tempo + 3) * 1000);
+            resolve('🎵 <b>' + label + ' का संगीत बज रहा है</b>');
+        } catch(e) { resolve("❌ संगीत में त्रुटि: " + e.message); }
+    });
+}
+
+async function callVision(file, userText, keys) {
+    if (!keys.gemini) throw new Error("जेमिनी चाबी नहीं");
+    var prompt = userText || "इस फ़ाइल में क्या है? हिंदी में बताओ।";
+    var parts = [];
+    var mt = file.type || "application/octet-stream";
+    if (mt.startsWith("text/") || /\.(txt|md|csv|json|xml|py|js|java|cpp|c|html|css|log)$/.test(file.name)) {
+        var tc = await fileToText(file);
+        if (tc.length > 100000) tc = tc.substring(0, 100000);
+        parts.push({ text: "फ़ाइल: " + file.name + "\n\n```\n" + tc + "\n```\n\n" + prompt });
+    } else {
+        var b64 = await fileToBase64(file);
+        parts.push({ text: prompt });
+        parts.push({ inline_data: { mime_type: mt, data: b64 } });
+    }
+    var models = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+    var lastErr = "";
+    for (var i = 0; i < models.length; i++) {
+        try {
+            var url = "https://generativelanguage.googleapis.com/v1beta/models/" + models[i] + ":generateContent?key=" + keys.gemini;
+            var resp = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: parts }], systemInstruction: { parts: [{ text: "तुम कोडिंग लवर हो। हिंदी में बताओ।" }] } })
+            });
+            if (resp.ok) { var d = await resp.json(); return d.candidates[0].content.parts[0].text; }
+            lastErr = models[i] + " — " + resp.status;
+        } catch(e) { lastErr = e.message; }
+    }
+    throw new Error("विज़न विफल: " + lastErr);
+}
+
+function showAskBox() {
+    var html = '<div class="ask-box"><h4>🤔 क्या बनाना है?</h4><div class="ask-btns">' +
+        '<button class="ask-btn" onclick="setInput(\'एक बिल्ली की तस्वीर बनाओ\')">🎨 तस्वीर</button>' +
+        '<button class="ask-btn" onclick="setInput(\'समुद्र का वीडियो बनाओ\')">🎬 वीडियो</button>' +
+        '<button class="ask-btn" onclick="setInput(\'शांत पियानो संगीत बनाओ\')">🎵 संगीत</button>' +
+        '<button class="ask-btn" onclick="setInput(\'पाइथन में कोड लिखो\')">💻 कोड</button>' +
+        '</div></div>';
+    addMessage("assistant", html, "❓ पूछो");
+}
+function setInput(t) { document.getElementById("input").value = t; sendMessage(); }
+
+function showI2VOptions(userPrompt) {
+    pendingVideoPrompt = userPrompt || "";
+    var promptLine = pendingVideoPrompt ? '<div style="background:#f0f0f0;color:#000;padding:10px;border-radius:8px;margin:10px 0;font-size:.9em;"><b>आपका प्रॉम्प्ट:</b><br>' + escapeAttr(pendingVideoPrompt) + '<br><button onclick="copyPrompt()" style="margin-top:8px;padding:6px 14px;background:#0072ff;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.85em;font-weight:600;">📋 कॉपी करो</button></div>' : '';
+    var html = '<div class="i2v-box"><h4>🎥 फ़ोटो से वीडियो — मुफ़्त</h4>' +
+        '<p style="color:#333;font-size:.9em;margin:8px 0;">बटन दबाओ → Kling AI खुलेगा → फ़ोटो अपलोड करो → प्रॉम्प्ट पेस्ट करो।</p>' +
+        promptLine +
+        '<a class="i2v-btn free" style="width:100%;padding:16px;font-size:1em;text-align:center;display:block;margin-top:10px;" href="https://klingai.com" target="_blank">🎬 Kling AI खोलो — मुफ़्त</a>' +
+        '<details style="margin-top:12px;"><summary style="cursor:pointer;color:#0072ff;font-size:.85em;font-weight:600;">🔁 और वेबसाइट</summary><div class="i2v-btns" style="margin-top:10px;">' +
+        '<a class="i2v-btn free" href="https://hailuoai.video" target="_blank">Hailuo AI</a>' +
+        '<a class="i2v-btn free" href="https://runwayml.com" target="_blank">Runway</a>' +
+        '<a class="i2v-btn free" href="https://pika.art" target="_blank">Pika</a>' +
+        '<a class="i2v-btn free" href="https://vivago.ai" target="_blank">Vivago</a>' +
+        '</div></details></div>';
+    addMessage("assistant", html, "🎥 फ़ोटो→वीडियो");
+}
+function copyPrompt() {
+    if (!pendingVideoPrompt) return;
+    var ta = document.createElement("textarea");
+    ta.value = pendingVideoPrompt;
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); alert("✅ कॉपी हो गया!"); }
+    catch(e) { alert("मैन्युअल कॉपी करो:\n\n" + pendingVideoPrompt); }
+    document.body.removeChild(ta);
+  }async function chatReply(text, keys, imageBase64) {
+    var isNeg = /(\bnahi\b|\bnahin\b|\bnai\b|\bmat\b|\bna\b|नहीं|नहि|मत)/i.test(text);
+    var prompt = isNeg
+        ? CAPABILITY + "उपयोगकर्ता ने इनकार किया है। कुछ मत बनाओ। हिंदी में जवाब दो।"
+        : CAPABILITY + "हिंदी में सहज, छोटा और मददगार जवाब दो। पिछली बातचीत ध्यान में रखो।" + (imageBase64 ? " उपयोगकर्ता ने स्क्रीनशॉट भी भेजा है — उसे देखकर जवाब दो।" : "");
+    var got = "";
+    try { got = await callGemini(prompt + "\n\nउपयोगकर्ता: " + text, keys, imageBase64); got = String(got || "").trim(); } catch(e) { got = ""; }
+    if (!got || got.length < 3) {
+        try { got = await callGroq(text, keys, prompt); got = String(got || "").trim(); } catch(e) { got = ""; }
+    }
+    if (!got || got.length < 3) got = "माफ़ करना, मैं समझ नहीं पाया। कृपया फिर से बताओ।";
+    return got;
+}
+
+async function sendMessage() {
+    var input = document.getElementById("input");
+    var text = input.value.trim();
+    var file = attachedFile;
+    var screenshot = pendingScreenshot;
+    pendingScreenshot = null;
+
+    if (!text && !file && !screenshot) return;
+    if (!currentChatId) currentChatId = createNewChat();
+    var keys = loadKeys();
+    input.value = ""; input.style.height = "auto";
+    input.placeholder = "कुछ भी पूछो... (🎤 दबाकर बोल सकते हो)";
+
+    var userDisplay = text || "";
+    if (file) {
+        var icon = "📎";
+        if (file.type.startsWith("image/")) icon = "🖼️";
+        else if (file.type.startsWith("video/")) icon = "🎬";
+        else if (file.type.startsWith("audio/")) icon = "🎵";
+        userDisplay = icon + " " + file.name + (text ? "\n\n" + text : "");
+    }
+    if (screenshot) {
+        userDisplay = "📱 [स्क्रीनशॉट]" + (text ? "\n\n" + text : "");
+    }
+    addMessage("user", userDisplay);
+    addTyping();
+    var btn = document.getElementById("sendBtn");
+    btn.disabled = true;
+
+    try {
+        var result;
+        if (screenshot) {
+            updateTyping("👁️ स्क्रीन देख रहा हूँ...");
+            result = await chatReply(text || "इस स्क्रीन में क्या दिख रहा है? विस्तार से बताओ।", keys, screenshot);
+            removeTyping();
+            addMessage("assistant", result, "👁️ स्क्रीन देखी");
+        } else if (file && file.type.startsWith("image/") && /(edit|एडिट|badlo|बदलो|change|रंग|color|background|बैकग्राउंड|kapde|कपड़े|shirt|कमीज़|baal|बाल|chashma|चश्मा|pila|पीला|laal|लाल|neela|नीला|hara|हरा)/i.test(text) && !/नहीं|मत|nahi|mat/i.test(text)) {
+            result = await callPhotoEdit(file, text, keys);
+            removeFile(); removeTyping();
+            addMessage("assistant", result, "✏️ फ़ोटो एडिट");
+        } else if (file && file.type.startsWith("image/") && /(video|वीडियो|animate|एनिमेट)/i.test(text) && !/नहीं|मत|nahi|mat/i.test(text)) {
+            removeTyping();
+            addMessage("assistant", "🎥 फ़ोटो से वीडियो के लिए नीचे वाला बटन दबाओ।", "🎥 फ़ोटो→वीडियो");
+            showI2VOptions(text); removeFile();
+        } else if (file) {
+            result = await callVision(file, text, keys);
+            removeFile(); removeTyping();
+            addMessage("assistant", result, "👁️ विज़न");
+        } else {
+            var intentType = await understandIntent(text, keys);
+            removeTyping(); addTyping();
+
+            if (intentType === "UNKNOWN") {
+                removeTyping();
+                addMessage("assistant", "माफ़ करना, मैं समझ नहीं पाया। कृपया फिर से बताओ — थोड़ा और साफ़ लिखो।\n\nजैसे: 'बिल्ली की तस्वीर बनाओ' या 'इसका वीडियो बनाओ'।", "🤔 समझ नहीं आया");
+            } else if (intentType === "QUESTION") {
+                var q = await chatReply(text, keys);
+                removeTyping(); addMessage("assistant", q, "💬 बातचीत");
+            } else if (intentType === "ASK_WHAT") {
+                removeTyping();
+                addMessage("assistant", "क्या बनाना है? विषय बताओ।", "❓ पूछो");
+                showAskBox();
+            } else if (intentType === "ASK_SUBJECT") {
+                removeTyping();
+                addMessage("assistant", "अच्छा — उसके बारे में क्या जानना है? या कहो \"... बनाओ\" तो बना दूँगा।", "❓ पूछो");
+            } else if (intentType === "CREATE_IMAGE") {
+                result = await callImage(text, keys);
+                removeTyping(); addMessage("assistant", result, "🎨 इमेज");
+            } else if (intentType === "CREATE_VIDEO") {
+                result = await callVideo(text, keys);
+                removeTyping(); addMessage("assistant", result, "🎬 वीडियो");
+            } else if (intentType === "CREATE_VIDEO_FROM_HISTORY") {
+                updateTyping("🔍 पिछला प्रॉम्प्ट ढूँढ रहा हूँ...");
+                var extracted = await extractPromptFromHistory(keys, text);
+                if (!extracted || extracted.length < 5 || /NONE/i.test(extracted)) {
+                    removeTyping();
+                    addMessage("assistant", "माफ़ करना, पिछली बातचीत में कोई प्रॉम्प्ट नहीं मिला।\n\nकृपया पहले कहानी/प्रॉम्प्ट लिखो, फिर कहो 'इसका वीडियो बनाओ'।", "🤔 समझ नहीं आया");
+                } else {
+                    updateTyping("🎬 पिछले प्रॉम्प्ट से वीडियो बन रहा है...\n\n📝 " + extracted.substring(0, 150));
+                    result = await callVideo(extracted, keys);
+                    removeTyping(); addMessage("assistant", result, "🎬 वीडियो (पिछले प्रॉम्प्ट से)");
+                }
+            } else if (intentType === "CREATE_IMAGE_FROM_HISTORY") {
+                updateTyping("🔍 पिछला प्रॉम्प्ट ढूँढ रहा हूँ...");
+                var extracted2 = await extractPromptFromHistory(keys, text);
+                if (!extracted2 || extracted2.length < 5 || /NONE/i.test(extracted2)) {
+                    removeTyping();
+                    addMessage("assistant", "माफ़ करना, पिछली बातचीत में कोई प्रॉम्प्ट नहीं मिला।", "🤔 समझ नहीं आया");
+                } else {
+                    result = await callImage(extracted2, keys);
+                    removeTyping(); addMessage("assistant", result, "🎨 इमेज (पिछले प्रॉम्प्ट से)");
+                }
+            } else if (intentType === "CREATE_MUSIC_FROM_HISTORY") {
+                var extracted3 = await extractPromptFromHistory(keys, text);
+                updateTyping("🎵 संगीत बज रहा है...");
+                result = await generateMusic(extracted3 || text);
+                removeTyping(); addMessage("assistant", result, "🎵 म्यूजिक");
+            } else if (intentType === "CHECK_HISTORY_FOR_PROMPT") {
+                updateTyping("🔍 पिछली बातचीत में प्रॉम्प्ट ढूँढ रहा हूँ...");
+                var ext = await extractPromptFromHistory(keys, text);
+                if (!ext || ext.length < 5 || /NONE/i.test(ext)) {
+                    removeTyping();
+                    addMessage("assistant", "माफ़ करना, पिछली बातचीत में कोई प्रॉम्प्ट नहीं मिला।\n\nकृपया पहले कहानी/प्रॉम्प्ट लिखो, फिर कहो 'इसका वीडियो बनाओ' या 'इसकी तस्वीर बनाओ'।", "🤔 समझ नहीं आया");
+                } else {
+                    var wantsVideo = /(video|वीडियो|movie|clip)/i.test(text);
+                    var wantsMusic = /(music|song|gaan|संगीत|गाना|धुन)/i.test(text);
+                    if (wantsVideo) {
+                        updateTyping("🎬 पिछले प्रॉम्प्ट से वीडियो बन रहा है...");
+                        var vres = await callVideo(ext, keys);
+                        removeTyping(); addMessage("assistant", vres, "🎬 वीडियो (पिछले प्रॉम्प्ट से)");
+                    } else if (wantsMusic) {
+                        updateTyping("🎵 संगीत बज रहा है...");
+                        var mres = await generateMusic(ext);
+                        removeTyping(); addMessage("assistant", mres, "🎵 म्यूजिक");
+                    } else {
+                        var ires = await callImage(ext, keys);
+                        removeTyping(); addMessage("assistant", ires, "🎨 इमेज (पिछले प्रॉम्प्ट से)");
+                    }
+                }
+            } else if (intentType === "CREATE_MUSIC") {
+                updateTyping("🎵 संगीत बन रहा है...");
+                result = await generateMusic(text);
+                removeTyping(); addMessage("assistant", result, "🎵 म्यूजिक");
+            } else if (intentType === "CREATE_CODE") {
+                var gc = "";
+                try { gc = await callGemini(CAPABILITY + "हिंदी में पूरा कोड लिखो।\n\n" + text, keys); gc = String(gc||"").trim(); } catch(e){ gc = ""; }
+                if (!gc || gc.length < 3) { try { gc = await callGroq(text, keys, CAPABILITY + "हिंदी में पूरा कोड लिखो।"); } catch(e) { gc = ""; } }
+                if (!gc || gc.length < 3) gc = "माफ़ करना, कोड नहीं बन पाया। फिर से बताओ।";
+                removeTyping(); addMessage("assistant", gc, "💻 कोड");
+            } else if (intentType === "SEARCH") {
+                try { result = await callGemini("ताज़ा जानकारी चाहिए। हिंदी में बताओ:\n\n" + text, keys); }
+                catch(e) { result = await chatReply(text, keys); }
+                removeTyping(); addMessage("assistant", result, "🔍 खोज");
+            } else {
+                var got = await chatReply(text, keys);
+                removeTyping(); addMessage("assistant", got, "💬 बातचीत");
+            }
+        }
+    } catch (e) {
+        removeTyping();
+        addMessage("assistant", "❌ " + e.message + "\n\nकृपया फिर से ट्राई करें।", "त्रुटि");
+        console.log("पूरी त्रुटि:", e);
+    } finally { btn.disabled = false; }
+}
+
+function useExample(el) { document.getElementById("input").value = el.textContent; sendMessage(); }
+
+var inputEl = document.getElementById("input");
+inputEl.addEventListener("input", function() { this.style.height = "auto"; this.style.height = Math.min(this.scrollHeight, 120) + "px"; });
+inputEl.addEventListener("keydown", function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+
+loadChats();
+if (Object.keys(allChats).length === 0) newChat(); else renderSessions();
+var keys = loadKeys();
+if (!keys.gemini || !keys.groq || !keys.agnes) { setTimeout(openSettings, 600); }
+</script>
+
+</body>
+</html>
