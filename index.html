@@ -2,480 +2,1857 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#0072ff">
 <title>AI assistant Ayush</title>
 <script src="https://js.puter.com/v2/"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:Arial,sans-serif;background:#0f2027;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-.header{padding:12px;background:#0072ff;display:flex;justify-content:space-between;align-items:center}
-.header h1{font-size:1.1em}
-.btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:8px 12px;border-radius:8px;font-size:1em;cursor:pointer}
-.messages{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:12px}
-.msg{max-width:85%;padding:12px 16px;border-radius:14px;line-height:1.6;word-wrap:break-word}
-.msg.user{align-self:flex-end;background:#0072ff;color:#fff}
-.msg.bot{align-self:flex-start;background:#fff;color:#000;border-left:4px solid #00c6ff}
-.msg.err{background:#ffe8e8;color:#8b0000;border-left-color:#e74c3c}
-.msg img,.msg video{max-width:100%;border-radius:8px;margin-top:8px}
-.msg pre{background:#f0f0f0;color:#000;padding:8px;border-radius:6px;overflow-x:auto;font-size:.85em}
-.msg audio{width:100%;margin-top:6px}
-.input-area{padding:10px;background:#000;display:flex;gap:6px;align-items:flex-end}
-textarea{flex:1;padding:10px;background:#1a1a2e;border:1px solid #0072ff;border-radius:18px;color:#fff;font-family:inherit;font-size:1em;resize:none;min-height:44px;max-height:100px}
-.mic,.send,.screen,.file{width:44px;height:44px;border:none;border-radius:50%;font-size:1.1em;cursor:pointer;color:#fff;flex-shrink:0}
-.file{background:#333}
-.screen{background:#333}
-.screen.on{background:#27ae60}
-.mic{background:#333}
-.mic.rec{background:#e74c3c}
-.send{background:#0072ff}
-.loading{padding:8px;color:#aaa;font-size:.9em}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;padding:20px;overflow-y:auto}
+body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%);color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden;position:fixed;width:100%}
+.header{padding:10px 12px;background:linear-gradient(90deg,#00c6ff 0%,#0072ff 100%);display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:10;flex-shrink:0;gap:6px}
+.header h1{font-size:1em;font-weight:700;flex:1;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.icon-btn{background:rgba(255,255,255,.2);border:none;color:#fff;width:36px;height:36px;border-radius:8px;font-size:1em;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.icon-btn.active{background:rgba(39,174,96,.8)}
+.sidebar{position:fixed;top:0;left:-280px;width:280px;height:100vh;background:#16213e;z-index:200;transition:left .3s ease;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.5)}
+.sidebar.open{left:0}
+.sidebar-header{padding:16px;background:linear-gradient(90deg,#00c6ff,#0072ff);display:flex;justify-content:space-between;align-items:center}
+.sidebar-header h2{font-size:1.1em}
+.close-sidebar{background:transparent;border:none;color:#fff;font-size:1.4em;cursor:pointer;padding:4px 8px}
+.sidebar-new{padding:12px 16px}
+.sidebar-new button{width:100%;padding:12px;background:linear-gradient(90deg,#00c6ff,#0072ff);color:#fff;border:none;border-radius:10px;font-size:.95em;font-weight:600;cursor:pointer}
+.sessions-list{flex:1;overflow-y:auto;padding:8px 12px}
+.session-item{padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.05);border-radius:10px;cursor:pointer;font-size:.9em;display:flex;justify-content:space-between;align-items:center;gap:8px;border-left:3px solid transparent}
+.session-item.active{background:rgba(0,198,255,.15);border-left-color:#00c6ff}
+.session-item .title{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.session-item .delete-btn{background:transparent;border:none;color:rgba(255,255,255,.5);font-size:1em;cursor:pointer;padding:2px 6px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150}
+.overlay.open{display:block}
+.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+.message{max-width:88%;padding:12px 16px;border-radius:16px;line-height:1.6;word-wrap:break-word;font-size:.95em;animation:slideIn .3s ease;position:relative}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.message.user{align-self:flex-end;background:linear-gradient(135deg,#00c6ff,#0072ff);color:#fff;border-bottom-right-radius:4px}
+.message.assistant{align-self:flex-start;background:#ffffff;border-left:4px solid #00c6ff;border-bottom-left-radius:4px;color:#000000}
+.message.error-box{background:#ffe8e8;border-left-color:#e74c3c;color:#8b0000;font-size:.85em;padding-right:16px}
+.message pre{background:#f0f0f0;color:#000;padding:10px;border-radius:8px;margin:8px 0;overflow-x:auto;font-size:.85em;font-family:'Consolas',monospace}
+.message code{background:#e8e8e8;color:#c0392b;padding:2px 6px;border-radius:4px;font-size:.9em;font-family:'Consolas',monospace}
+.message img,.message video{max-width:100%;border-radius:10px;margin-top:8px;max-height:400px}
+.message audio{width:100%;margin-top:8px}
+.brain-tag{display:inline-block;font-size:.7em;padding:2px 8px;background:rgba(0,198,255,.2);border-radius:10px;margin-bottom:6px;color:#0072ff;font-weight:700}
+.msg-text{display:block;font-size:1em;line-height:1.7;color:#000}
+.msg-text a{color:#0072ff;text-decoration:underline}
+.rate-note{display:block;font-size:.75em;color:#c0392b;background:#fff3cd;padding:4px 8px;border-radius:6px;margin-bottom:6px;font-weight:600}
+.speak-row{margin-top:10px}
+.speak-btn{background:#e3f2fd;border:1px solid #00c6ff;color:#0072ff;padding:6px 14px;border-radius:18px;cursor:pointer;font-size:.85em;font-weight:600}
+.speak-btn.speaking{background:#00c6ff;color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.file-preview{padding:8px 12px;background:rgba(0,198,255,.1);border-top:1px solid rgba(0,198,255,.3);display:none;flex-shrink:0}
+.file-preview.show{display:block}
+.file-info{display:flex;align-items:center;gap:10px;font-size:.85em}
+.file-icon{font-size:1.8em}
+.file-details{flex:1;overflow:hidden}
+.file-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-size:.75em;color:rgba(255,255,255,.6);margin-top:2px}
+.file-remove{background:rgba(231,76,60,.3);border:none;color:#fff;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:.9em}
+.file-thumb{width:50px;height:50px;border-radius:6px;object-fit:cover}
+.screen-status{padding:6px 12px;background:rgba(39,174,96,.2);border-top:1px solid rgba(39,174,96,.4);display:none;align-items:center;justify-content:space-between;font-size:.85em;flex-shrink:0}
+.screen-status.show{display:flex}
+.screen-status .dot{display:inline-block;width:8px;height:8px;background:#27ae60;border-radius:50%;margin-right:6px;animation:pulse 1.5s infinite}
+.screen-stop{background:rgba(231,76,60,.3);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.8em}
+.input-area{padding:10px 12px 14px;background:rgba(0,0,0,.4);border-top:1px solid rgba(255,255,255,.1);flex-shrink:0}
+.lang-row{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.lang-row::-webkit-scrollbar{display:none}
+.lang-chip{padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;font-size:.75em;white-space:nowrap;color:#fff;cursor:pointer}
+.lang-chip.active{background:linear-gradient(90deg,#00c6ff,#0072ff);border-color:transparent}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+textarea{flex:1;padding:12px 16px;background:rgba(255,255,255,.15);border:2px solid rgba(0,198,255,.5);border-radius:22px;color:#fff;font-family:inherit;font-size:1em;font-weight:500;resize:none;min-height:46px;max-height:120px;line-height:1.4;caret-color:#00c6ff}
+textarea:focus{outline:none;border-color:#00c6ff;background:rgba(255,255,255,.2);box-shadow:0 0 12px rgba(0,198,255,.4)}
+textarea::placeholder{color:rgba(255,255,255,.55)}
+textarea.listening{border-color:#e74c3c;box-shadow:0 0 15px rgba(231,76,60,.5);animation:listen 1.5s infinite}
+@keyframes listen{0%,100%{box-shadow:0 0 15px rgba(231,76,60,.5)}50%{box-shadow:0 0 25px rgba(231,76,60,.9)}}
+.attach-btn,.screen-btn,.mic-btn,.send-btn{width:46px;height:46px;border:none;border-radius:50%;font-size:1.2em;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+.attach-btn{background:rgba(255,255,255,.1)}
+.attach-btn.has-file{background:#27ae60}
+.screen-btn{background:rgba(255,255,255,.1)}
+.screen-btn.active{background:#27ae60;animation:pulse 1.5s infinite}
+.screen-btn:disabled{opacity:.5;cursor:not-allowed}
+.mic-btn{background:rgba(255,255,255,.1)}
+.mic-btn.recording{background:#e74c3c;animation:pulse 1s infinite}
+.send-btn{background:linear-gradient(135deg,#00c6ff,#0072ff)}
+.send-btn:disabled{opacity:.4}
+.typing-dot{display:inline-block;width:6px;height:6px;margin:0 2px;background:#00c6ff;border-radius:50%;animation:blink 1.4s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;padding:20px;overflow-y:auto}
 .modal.open{display:block}
-.modal-box{max-width:450px;margin:30px auto;background:#1a1a2e;padding:22px;border-radius:12px}
-.modal-box h2{color:#00c6ff;margin-bottom:14px}
-.modal-box label{display:block;color:#00c6ff;margin:12px 0 4px;font-size:.9em}
-.modal-box input{width:100%;padding:10px;background:#000;border:1px solid #444;border-radius:6px;color:#fff}
-.modal-box .hint{font-size:.75em;color:#888;margin-top:3px}
-.modal-btns{display:flex;gap:10px;margin-top:18px}
-.modal-btns button{flex:1;padding:12px;border:none;border-radius:8px;font-weight:600;cursor:pointer}
-.save{background:#0072ff;color:#fff}
-.cancel{background:#333;color:#fff}
+.modal-content{max-width:500px;margin:20px auto;background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid rgba(0,198,255,.3)}
+.modal h2{color:#00c6ff;margin-bottom:8px;font-size:1.3em}
+.modal p{color:rgba(255,255,255,.7);font-size:.85em;margin-bottom:16px;line-height:1.5}
+.modal label{display:block;color:#00c6ff;font-size:.85em;margin:14px 0 6px;font-weight:600}
+.modal input{width:100%;padding:10px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:.9em;font-family:monospace}
+.modal input:focus{outline:none;border-color:#00c6ff}
+.modal .hint{font-size:.75em;color:rgba(255,255,255,.5);margin-top:4px}
+.modal .hint a{color:#00c6ff;text-decoration:none}
+.modal-buttons{display:flex;gap:10px;margin-top:22px}
+.modal-buttons button{flex:1;padding:12px;border:none;border-radius:10px;font-size:.95em;font-weight:600;cursor:pointer}
+.btn-primary{background:linear-gradient(135deg,#00c6ff,#0072ff);color:#fff}
+.btn-secondary{background:rgba(255,255,255,.1);color:#fff}
+.btn-test{background:rgba(39,174,96,.3);color:#fff;margin-top:12px;width:100%;padding:10px;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.sec-warn{background:#fff3cd;color:#8b0000;padding:10px 12px;border-radius:8px;font-size:.8em;margin-bottom:12px;line-height:1.5;border-left:4px solid #e74c3c}
+.welcome{text-align:center;padding:20px;color:rgba(255,255,255,.7)}
+.welcome h2{color:#00c6ff;margin-bottom:10px;font-size:1.4em}
+.welcome .examples{display:grid;gap:8px;margin-top:20px;text-align:left}
+.example{padding:12px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:.85em;cursor:pointer;color:#fff}
 </style>
 </head>
 <body>
 
 <div class="header">
-<h1>⚡ AI assistant Ayush</h1>
-<div>
-<button class="btn" onclick="toggleSpeak()" id="spkBtn">🔇</button>
-<button class="btn" onclick="openSettings()">⚙️</button>
+<button class="icon-btn" onclick="toggleSidebar()">☰</button>
+<h1 id="chatTitle">⚡ AI assistant Ayush</h1>
+<button class="icon-btn" onclick="newChat()">➕</button>
+<button class="icon-btn" id="autoSpeakBtn" onclick="toggleAutoSpeak()" title="ऑटो-स्पीक">🔇</button>
+<button class="icon-btn" onclick="openSettings()">⚙️</button>
 </div>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<h2>💬 बातचीत</h2>
+<button class="close-sidebar" onclick="toggleSidebar()">✕</button>
+</div>
+<div class="sidebar-new">
+<button onclick="newChat()">➕ नई बातचीत</button>
+</div>
+<div class="sessions-list" id="sessionsList"></div>
 </div>
 
 <div class="messages" id="messages">
-<div class="msg bot">
-नमस्ते! मैं <b>कोडिंग लवर</b> हूँ 💻<br>
-मुझे <b>मिस्टर आयुष राज</b> ने बनाया है।<br><br>
-बात करो, तस्वीर बनवाओ, वीडियो बनवाओ, संगीत सुनो — सब कुछ।<br><br>
-पहले ⚙️ में चाबियाँ डालो, फिर पूछो।
+<div class="welcome">
+<h2>नमस्ते! मैं कोडिंग लवर हूँ 💻</h2>
+<p>मुझे मिस्टर आयुष राज ने बनाया है।</p>
+<div class="examples">
+<div class="example" onclick="useExample(this)">आज की ताज़ा खबर बताओ</div>
+<div class="example" onclick="useExample(this)">एक बिल्ली की तस्वीर बनाओ</div>
+<div class="example" onclick="useExample(this)">समुद्र का वीडियो बनाओ</div>
+<div class="example" onclick="useExample(this)">गिटार वाला संगीत बजाओ</div>
 </div>
+</div>
+</div>
+
+<div class="file-preview" id="filePreview">
+<div class="file-info">
+<div id="fileIcon" class="file-icon">📄</div>
+<img id="fileThumb" class="file-thumb" style="display:none">
+<div class="file-details">
+<div class="file-name" id="fileName">file</div>
+<div class="file-size" id="fileSize">0 KB</div>
+</div>
+<button class="file-remove" onclick="removeFile()">✕</button>
+</div>
+</div>
+
+<div class="screen-status" id="screenStatus">
+<div><span class="dot"></span> स्क्रीन शेयर चालू — बोलते ही स्क्रीनशॉट जाएगा</div>
+<button class="screen-stop" onclick="stopScreenShare()">बंद करो</button>
 </div>
 
 <div class="input-area">
-<input type="file" id="fileInput" style="display:none" accept="image/*" onchange="onFile(event)">
-<button class="file" onclick="document.getElementById('fileInput').click()">📎</button>
-<button class="screen" id="screenBtn" onclick="toggleScreen()">📱</button>
-<textarea id="input" placeholder="कुछ भी पूछो..." rows="1"></textarea>
-<button class="mic" id="micBtn" onclick="toggleMic()">🎤</button>
-<button class="send" id="sendBtn" onclick="sendMessage()">➤</button>
+<div class="lang-row" id="langRow">
+<div class="lang-chip active" data-lang="hi-IN">हिंदी</div>
+<div class="lang-chip" data-lang="en-US">English</div>
+<div class="lang-chip" data-lang="bn-IN">বাংলা</div>
+<div class="lang-chip" data-lang="ta-IN">தமிழ்</div>
+<div class="lang-chip" data-lang="te-IN">తెలుగు</div>
+<div class="lang-chip" data-lang="mr-IN">मराठी</div>
+<div class="lang-chip" data-lang="gu-IN">ગુજરાતી</div>
+<div class="lang-chip" data-lang="kn-IN">ಕನ್ನಡ</div>
+<div class="lang-chip" data-lang="ml-IN">മലയാളം</div>
+</div>
+<div class="input-row">
+<input type="file" id="fileInput" style="display:none" accept="image/*,video/*,audio/*,.pdf,.txt,.doc,.docx,.csv,.json,.py,.js,.java,.cpp,.html,.css,.xml,.md,.jpg,.jpeg,.png,.webp,.heic,.heif" onchange="handleFileSelect(event)">
+<button class="attach-btn" id="attachBtn" onclick="document.getElementById('fileInput').click()">📎</button>
+<button class="screen-btn" id="screenBtn" onclick="toggleScreenShare()" title="स्क्रीन शेयर">📱</button>
+<textarea id="input" placeholder="कुछ भी पूछो... (🎤 दबाकर बोल सकते हो)" rows="1"></textarea>
+<button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+<button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+</div>
 </div>
 
-<div class="modal" id="settings">
-<div class="modal-box">
-<h2>⚙️ चाबियाँ डालो</h2>
+<div class="modal" id="settingsModal">
+<div class="modal-content">
+<h2>⚙️ सेटिंग्स</h2>
+<p>सब कुछ मुफ़्त। कोई कार्ड नहीं, कोई बिल नहीं।</p>
 
-<label>🔍 जेमिनी चाबी (मुख्य दिमाग़)</label>
-<input id="geminiKey" placeholder="AIza... या AQ...">
-<div class="hint">aistudio.google.com/apikey — मुफ़्त</div>
+<div class="sec-warn">
+🔐 <b>सुरक्षा सूचना:</b> आपकी API keys इस डिवाइस के ब्राउज़र में एन्क्रिप्टेड (XOR + Base64) रूप में सेव होती हैं। फिर भी:<br>
+• सार्वजनिक/साझा फ़ोन पर keys मत डालो<br>
+• किसी और को keys कभी मत भेजो<br>
+• पुराने ब्राउज़र से keys हटाने के लिए नीचे "साफ़ करो" दबाओ
+</div>
 
-<label>⚡ ग्रोक चाबी (बैकअप)</label>
-<input id="groqKey" placeholder="gsk_...">
-<div class="hint">console.groq.com/keys — मुफ़्त</div>
+<label>🔍 मुख्य दिमाग़ Key (Gemini)</label>
+<input type="password" id="geminiKey" placeholder="AIza... या AQ...">
+<div class="hint">मुफ़्त: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></div>
 
-<label>🎨 Agnes चाबी (तस्वीर बनाना)</label>
-<input id="agnesKey" placeholder="sk-...">
-<div class="hint">platform.agnes-ai.com — मुफ़्त</div>
+<label>⚡ बैकअप दिमाग़ Key (Groq)</label>
+<input type="password" id="groqKey" placeholder="gsk_...">
+<div class="hint">मुफ़्त: <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a></div>
 
-<div class="modal-btns">
-<button class="cancel" onclick="closeSettings()">रद्द</button>
-<button class="save" onclick="saveSettings()">सहेजो</button>
+<label>🎨 कलाकार दिमाग़ Key (Agnes AI) — तस्वीर बनाने/एडिट के लिए ज़रूरी</label>
+<input type="password" id="agnesKey" placeholder="sk-...">
+<div class="hint">मुफ़्त: <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a></div>
+
+<label>🎬 Pollinations AI Key (सिर्फ़ वीडियो fallback के लिए, वैकल्पिक)</label>
+<input type="password" id="pollinationsKey" placeholder="pk_...">
+<div class="hint">मुफ़्त: <a href="https://enter.pollinations.ai" target="_blank">enter.pollinations.ai</a></div>
+
+<button class="btn-test" onclick="testKeys()">🔬 चाबियाँ जाँचो</button>
+<button class="btn-secondary" style="width:100%;padding:10px;margin-top:8px;border:none;border-radius:10px;font-weight:600;cursor:pointer;background:rgba(231,76,60,.25);color:#fff" onclick="clearAllKeys()">🗑️ सब चाबियाँ + चैट साफ़ करो</button>
+
+<div class="modal-buttons">
+<button class="btn-secondary" onclick="closeSettings()">रद्द</button>
+<button class="btn-primary" onclick="saveSettings()">सहेजो</button>
 </div>
 </div>
 </div>
 
 <script>
-var MSG = document.getElementById('messages');
-var currentLang = "hi-IN";
-var autoSpeak = false;
-var recording = false;
-var recognition = null;
-var attachedFile = null;
-var screenStream = null;
-var screenShotData = null;
-var lastImage = null;
+var STORAGE_KEY="ai_ayush_keys_v5", CHATS_KEY="ai_ayush_chats_v1";
+var currentLang="hi-IN", messagesEl=document.getElementById("messages");
+var currentChatId=null, allChats={}, recognition=null, isRecording=false;
+var autoSpeak=false, currentUtterance=null, attachedFile=null, lastGeneratedImageUrl=null;
+var screenStream=null, pendingScreenshot=null;
+var lastIntent=null, lastPrompt=null;
+var HISTORY_LIMIT=20, HISTORY_CHAR_LIMIT=2000;
+var sendToken=0;
+var globalAudioCtx=null;
+var musicSessions={};
+var musicSessionCounter=0;
+var ttsToken=0;
+var userHasInteracted=false;
 
-var CAP = "तुम 'कोडिंग लवर' हो — पूरा AI सहायक। तुम्हें मिस्टर आयुष राज ने बहुत जटिल कोडिंग करके बनाया है। कोई पूछे 'किसने बनाया' तो कहो: 'मुझे मिस्टर आयुष राज ने बनाया है।' तुम्हारे पास है: तस्वीर बनाना, वीडियो बनाना, संगीत, कोड, स्क्रीन शेयर, फ़ाइल पढ़ना, इंटरनेट खोज। हिंदी में जवाब दो। 'नहीं/मत' = इनकार (कुछ मत बनाओ)। 'क्यों/क्या/कैसे' = सवाल (जवाब दो)। 'बनाओ/लिखो' = हुक्म (तब बनाओ)। समझ न आए तो कहो: 'माफ़ करना, समझ नहीं पाया। फिर से बताओ।'";
+var CAPABILITY="तुम 'कोडिंग लवर' हो — एक पूरा AI सहायक। तुम्हें मिस्टर आयुष राज (Mister Aayush Raj) ने बनाया है। अगर कोई पूछे 'तुम्हें किसने बनाया?' तो गर्व से कहो: 'मुझे मिस्टर आयुष राज ने बनाया है।' कभी किसी और कंपनी/व्यक्ति का नाम मत लो।\n\n"+
+"=== 🚨 AI के नाम कभी मत लो ===\n"+
+"• Veo, Agnes, Puter, Gemini, जेमिनी, ग्रोक, Groq, ChatGPT, GPT, DALL-E, Sora, Runway, Pika, Kling, Midjourney, OpenAI, Anthropic, Google, Microsoft, Meta, Pollinations — कोई नाम मत लो।\n"+
+"• पूछे तो कहो: 'हमारा अपना सिस्टम है।'\n"+
+"• वीडियो = 'वीडियो'। तस्वीर = 'तस्वीर'।\n\n"+
+"=== 🚨 ताज़ा खबरों के बारे में ===\n"+
+"• ताज़ा खबर, आज की घटना, मौसम, स्कोर पूछे तो सर्च tool से जवाब दो।\n"+
+"• सोर्स का लिंक भी दो।\n\n"+
+"=== 🚨 हिंदी में जवाब ===\n"+
+"• हिंदी में लिखे/बोले तो देवनागरी हिंदी में जवाब।\n\n"+
+"=== 🚨 अंदाज़ा / अनुमान ===\n"+
+"• 'अपने मन से बताओ', 'अंदाज़ा लगाओ' — बिना झिझक अंदाज़ा दो।\n"+
+"• 'इसकी उम्र बताओ' — चेहरा देखकर अनुमानित उम्र बताओ।\n"+
+"• कभी मत कहो 'समझ नहीं पाया' ऐसे सवालों पर।\n\n"+
+"=== 🚨 अपने मन से (imagination) ===\n"+
+"• 'अपने मन से बनाओ' बोले तो बिना पूछे सुंदर दृश्य ख़ुद सोचो।\n"+
+"• कभी मत पूछो 'क्या बनाऊँ?' — बस बना दो।\n\n"+
+"=== तुम्हारी क्षमताएँ ===\n"+
+"• 💬 बातचीत • 🎨 तस्वीर • 🎬 वीडियो • ✏️ फ़ोटो एडिट • 🎵 संगीत • 💻 कोड • 📄 फ़ाइल/PDF/वीडियो frame • 🔍 ताज़ा खबरें • 🎥 YouTube • 📱 स्क्रीन शेयर • 🎤 आवाज़ • 🌐 9 भाषाएँ\n\n"+
+"=== 🚨 कोड कभी मत दो ===\n"+
+"• 'पियानो बजाओ', 'तस्वीर बनाओ', 'वीडियो बनाओ' — कोड/HTML/JS/गाइड मत दो। '<br>' जैसा टैग मत लिखो।\n\n";
 
-// ============ चाबियाँ ============
-function getKeys() {
-    try { return JSON.parse(localStorage.getItem("ai_ayush_keys") || '{}'); }
-    catch(e) { return {}; }
+var CODE_CAPABILITY = "तुम 'कोडिंग लवर' हो — कोड समझने के विशेषज्ञ। तुम्हें मिस्टर आयुष राज ने बनाया है। " +
+    "उपयोगकर्ता ने एक कोड भेजा है। ध्यान से पढ़ो और हिंदी में समझाओ:\n\n" +
+    "• कौन सी भाषा है (Python/JavaScript/Java/C++/HTML/CSS आदि)\n" +
+    "• यह कोड क्या करता है — पूरा सारांश\n" +
+    "• मुख्य हिस्से — function, variable, loop क्या कर रहे हैं\n" +
+    "• अगर कोई गड़बड़ी (bug) है तो बताओ और ठीक करके दो\n" +
+    "• कोड को ``` भाषा के अंदर लिखकर दो\n\n" +
+    "महत्वपूर्ण: कभी मत कहो 'समझ नहीं पाया'। हिंदी (देवनागरी) में जवाब। किसी AI का नाम मत लो।";
+
+// ============ 🔐 Key Obfuscation ============
+var _K = "ayush_ai_2024_secret";
+function _obf(s){
+    if(!s) return "";
+    var out = "";
+    for(var i = 0; i < s.length; i++){
+        out += String.fromCharCode((s.charCodeAt(i) ^ _K.charCodeAt(i % _K.length)) & 0xFF);
+    }
+    try{ return btoa(out); }catch(e){ return s; }
 }
-function openSettings() {
-    var k = getKeys();
-    document.getElementById('geminiKey').value = k.gemini || "";
-    document.getElementById('groqKey').value = k.groq || "";
-    document.getElementById('agnesKey').value = k.agnes || "";
-    document.getElementById('settings').classList.add('open');
+function _deobf(s){
+    if(!s) return "";
+    try{
+        var raw = atob(s);
+        var out = "";
+        for(var i = 0; i < raw.length; i++){
+            out += String.fromCharCode((raw.charCodeAt(i) ^ _K.charCodeAt(i % _K.length)) & 0xFF);
+        }
+        return out;
+    }catch(e){ return ""; }
 }
-function closeSettings() { document.getElementById('settings').classList.remove('open'); }
-function saveSettings() {
+
+// ============ चाबियाँ (obfuscated) ============
+function loadKeys(){
+    try{
+        var s = localStorage.getItem(STORAGE_KEY);
+        if(!s) return {gemini:"",groq:"",agnes:"",pollinations:""};
+        var o = JSON.parse(s);
+        // नया obfuscated format
+        if(o.g !== undefined || o.q !== undefined || o.a !== undefined || o.p !== undefined){
+            return {
+                gemini: _deobf(o.g),
+                groq: _deobf(o.q),
+                agnes: _deobf(o.a),
+                pollinations: _deobf(o.p)
+            };
+        }
+        // पुरानी plain format — migrate
+        return {gemini:o.gemini||"", groq:o.groq||"", agnes:o.agnes||"", pollinations:o.pollinations||""};
+    }catch(e){}
+    return {gemini:"",groq:"",agnes:"",pollinations:""};
+}
+function saveKeysToStorage(k){
+    try{
+        var obf = {
+            g: k.gemini ? _obf(k.gemini) : "",
+            q: k.groq ? _obf(k.groq) : "",
+            a: k.agnes ? _obf(k.agnes) : "",
+            p: k.pollinations ? _obf(k.pollinations) : ""
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(obf));
+    }catch(e){ console.error("Keys save fail:", e); }
+}
+function openSettings(){
+    var k = loadKeys();
+    document.getElementById("geminiKey").value = k.gemini || "";
+    document.getElementById("groqKey").value = k.groq || "";
+    document.getElementById("agnesKey").value = k.agnes || "";
+    document.getElementById("pollinationsKey").value = k.pollinations || "";
+    document.getElementById("settingsModal").classList.add("open");
+}
+function closeSettings(){ document.getElementById("settingsModal").classList.remove("open"); }
+function saveSettings(){
     var k = {
-        gemini: document.getElementById('geminiKey').value.trim(),
-        groq: document.getElementById('groqKey').value.trim(),
-        agnes: document.getElementById('agnesKey').value.trim()
+        gemini: document.getElementById("geminiKey").value.trim(),
+        groq: document.getElementById("groqKey").value.trim(),
+        agnes: document.getElementById("agnesKey").value.trim(),
+        pollinations: document.getElementById("pollinationsKey").value.trim()
     };
-    localStorage.setItem("ai_ayush_keys", JSON.stringify(k));
+    saveKeysToStorage(k);
     closeSettings();
-    addMsg('bot', '✅ चाबियाँ सहेज लीं!');
+    addMessage("assistant","✅ चाबियाँ सुरक्षित रूप में सहेज लीं!","💬");
+}
+function clearAllKeys(){
+    if(!confirm("सारी API keys और सारी चैट हमेशा के लिए मिट जाएँगी। पक्का?")) return;
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    try{ localStorage.removeItem(CHATS_KEY); }catch(e){}
+    allChats = {};
+    closeSettings();
+    location.reload();
+}
+function testKeys(){
+    var m = document.getElementById("geminiKey").value.trim();
+    var g = document.getElementById("groqKey").value.trim();
+    var a = document.getElementById("agnesKey").value.trim();
+    var p = document.getElementById("pollinationsKey").value.trim();
+    var msg = "🔬 जाँच:\n\n";
+    msg += m ? "✅ मुख्य दिमाग़ (Gemini)\n" : "⚠️ मुख्य दिमाग़ नहीं\n";
+    msg += g && g.indexOf("gsk_") === 0 ? "✅ बैकअप (Groq)\n" : (g ? "⚠️ बैकअप: gsk_ से शुरू नहीं\n" : "⚠️ बैकअप नहीं\n");
+    msg += a && a.indexOf("sk-") === 0 ? "✅ कलाकार (Agnes) — तस्वीर के लिए ज़रूरी\n" : (a ? "⚠️ कलाकार: sk- से शुरू नहीं\n" : "⚠️ कलाकार नहीं — तस्वीर नहीं बनेगी\n");
+    msg += p && (p.indexOf("pk_") === 0 || p.indexOf("sk_") === 0) ? "✅ Pollinations (वीडियो fallback)" : "⚠️ Pollinations नहीं (ठीक है, ज़रूरी नहीं)";
+    alert(msg);
+}
+function isRateLimit(err){
+    if(!err) return false;
+    var m = String(err.message || err).toLowerCase();
+    return /429|rate limit|quota|resource.?exhausted|too many requests|limit.*exceed/.test(m);
+}
+function escapeAttr(s){
+    return String(s || "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// ============ संदेश ============
-function addMsg(type, content) {
-    var d = document.createElement('div');
-    d.className = 'msg ' + type;
-    d.innerHTML = content;
-    MSG.appendChild(d);
-    MSG.scrollTop = MSG.scrollHeight;
-    return d;
-}
-function escapeHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function formatReply(text) {
-    var s = escapeHtml(text);
-    s = s.replace(/```(\w+)?\n?([\s\S]*?)```/g, '<pre>$2</pre>');
-    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-    s = s.replace(/\n/g, '<br>');
-    return s;
-}
-
-// ============ बोलना ============
-function toggleSpeak() {
-    autoSpeak = !autoSpeak;
-    document.getElementById('spkBtn').textContent = autoSpeak ? '🔊' : '🔇';
-}
-function speak(text) {
-    if (!window.speechSynthesis || !autoSpeak) return;
-    var clean = text.replace(/<[^>]+>/g, '').replace(/\n/g, '। ');
-    var u = new SpeechSynthesisUtterance(clean);
-    u.lang = currentLang;
-    speechSynthesis.speak(u);
-}
-
-// ============ माइक ============
-function toggleMic() {
-    if (recording) { try { recognition.stop(); } catch(e) {} return; }
-    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('तुम्हारे फ़ोन में आवाज़ पहचान नहीं है। Chrome ब्राउज़र में खोलो।'); return; }
-    recognition = new SR();
-    recognition.lang = currentLang;
-    recognition.interimResults = true;
-    recognition.continuous = false;
-
-    recognition.onstart = function() {
-        recording = true;
-        var m = document.getElementById('micBtn');
-        m.classList.add('rec');
-        m.textContent = '⏹';
-    };
-    recognition.onresult = function(e) {
-        var text = '';
-        for (var i = e.resultIndex; i < e.results.length; i++) {
-            text += e.results[i][0].transcript;
-        }
-        document.getElementById('input').value = text;
-    };
-    recognition.onerror = function(ev) {
-        alert('माइक की अनुमति नहीं मिली: ' + ev.error + '\n\nफ़ोन Settings → Apps → ऐप → Permissions → Microphone चालू करो।');
-    };
-    recognition.onend = async function() {
-        recording = false;
-        var m = document.getElementById('micBtn');
-        m.classList.remove('rec');
-        m.textContent = '🎤';
-        if (screenStream) {
-            screenShotData = await captureScreen();
-        }
-        var txt = document.getElementById('input').value.trim();
-        if (txt) setTimeout(sendMessage, 300);
-    };
-    try { recognition.start(); } catch(e) { alert('माइक शुरू नहीं हुआ: ' + e.message); }
-}
-
-// ============ स्क्रीन शेयर ============
-async function toggleScreen() {
-    if (screenStream) {
-        try { screenStream.getTracks().forEach(t => t.stop()); } catch(e) {}
-        screenStream = null;
-        document.getElementById('screenBtn').classList.remove('on');
-        addMsg('bot', '📱 स्क्रीन शेयर बंद।');
-        return;
-    }
-    try {
-        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-        document.getElementById('screenBtn').classList.add('on');
-        screenStream.getVideoTracks()[0].addEventListener('ended', function() {
-            screenStream = null;
-            document.getElementById('screenBtn').classList.remove('on');
-        });
-        addMsg('bot', '📱 स्क्रीन शेयर चालू! अब 🎤 दबाकर बोलो — उस वक़्त की स्क्रीन AI को जाएगी।');
-    } catch(e) {
-        alert('स्क्रीन शेयर नहीं हो पाई: ' + e.message);
+// ============ 🎵 संगीत (AudioContext fix) ============
+function markUserGesture(){
+    userHasInteracted = true;
+    if(globalAudioCtx && globalAudioCtx.state === "suspended"){
+        try{ globalAudioCtx.resume(); }catch(e){}
     }
 }
-async function captureScreen() {
-    try {
-        var video = document.createElement('video');
-        video.srcObject = screenStream;
-        video.muted = true;
-        await video.play();
-        await new Promise(r => setTimeout(r, 300));
-        var c = document.createElement('canvas');
-        c.width = video.videoWidth || 1080;
-        c.height = video.videoHeight || 1920;
-        c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
-        video.pause();
-        return c.toDataURL('image/jpeg', 0.7).split(',')[1];
-    } catch(e) { return null; }
-}
+document.addEventListener("touchstart", markUserGesture, {passive:true});
+document.addEventListener("click", markUserGesture, {passive:true});
+document.addEventListener("keydown", markUserGesture);
 
-// ============ फ़ाइल ============
-function onFile(e) {
-    var f = e.target.files[0];
-    if (!f) return;
-    if (f.size > 20 * 1024 * 1024) { alert('फ़ाइल 20MB से बड़ी।'); return; }
-    attachedFile = f;
-    addMsg('bot', '📎 फ़ाइल मिली: <b>' + escapeHtml(f.name) + '</b><br>अब बताओ क्या करना है।');
-}
-
-// ============ API ============
-async function callGemini(text, img) {
-    var k = getKeys();
-    if (!k.gemini) throw new Error('जेमिनी चाबी नहीं है। ⚙️ में डालो।');
-    var models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
-    var parts = [{ text: text }];
-    if (img) parts.push({ inline_data: { mime_type: 'image/jpeg', data: img } });
-    var lastErr = '';
-    for (var i = 0; i < models.length; i++) {
-        try {
-            var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + models[i] + ':generateContent?key=' + k.gemini;
-            var r = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: parts }] })
-            });
-            if (r.ok) {
-                var d = await r.json();
-                return d.candidates[0].content.parts[0].text;
-            }
-            lastErr = models[i] + ':' + r.status;
-        } catch(e) { lastErr = e.message; }
+function getAudioCtx(){
+    if(!globalAudioCtx || globalAudioCtx.state === "closed"){
+        try{ globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch(e){ return null; }
     }
-    throw new Error('जेमिनी विफल — ' + lastErr);
+    if(globalAudioCtx.state === "suspended" && userHasInteracted){
+        try{ globalAudioCtx.resume(); }catch(e){}
+    }
+    return globalAudioCtx;
 }
-
-async function callGroq(text, sys) {
-    var k = getKeys();
-    if (!k.groq || k.groq.indexOf('gsk_') !== 0) throw new Error('ग्रोक चाबी सही नहीं।');
-    var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + k.groq },
-        body: JSON.stringify({
-            model: 'groq/compound',
-            messages: [{ role: 'system', content: sys }, { role: 'user', content: text }],
-            temperature: 0.3, max_tokens: 4000
-        })
+function stopAllMusic(){
+    Object.keys(musicSessions).forEach(function(id){
+        try{ musicSessions[id].stop(); }catch(e){}
+        delete musicSessions[id];
     });
-    if (!r.ok) throw new Error('ग्रोक ' + r.status);
-    var d = await r.json();
-    return d.choices[0].message.content;
 }
-
-async function callAgnesImage(prompt) {
-    var k = getKeys();
-    if (!k.agnes || k.agnes.indexOf('sk-') !== 0) throw new Error('Agnes चाबी नहीं है। ⚙️ में डालो।');
-    var r = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + k.agnes },
-        body: JSON.stringify({
-            model: 'agnes-image-2.5-flash',
-            prompt: prompt + ', ultra detailed, 8k, professional photography, sharp focus',
-            size: '2K', ratio: '1:1',
-            extra_body: { response_format: 'url' }
-        })
-    });
-    if (!r.ok) { var eb = await r.text(); throw new Error('Agnes ' + r.status + ': ' + eb.substring(0,150)); }
-    var d = await r.json();
-    var url = d.data && d.data[0] && d.data[0].url;
-    if (!url) throw new Error('तस्वीर URL नहीं मिला');
-    lastImage = url;
-    return url;
+function updateMusicBtn(sid){
+    var s = musicSessions[sid];
+    var b = document.getElementById("musicbtn_" + sid);
+    var st = document.getElementById("musicst_" + sid);
+    if(b) b.textContent = (s && s.playing) ? "⏸" : "▶️";
+    if(st) st.textContent = (s && s.playing) ? "बज रहा है — लगभग 20 सेकंड" : "रुका हुआ — फिर दबाओ";
 }
-
-async function callAgnesEdit(base64Full, editPrompt) {
-    var k = getKeys();
-    if (!k.agnes) throw new Error('Agnes चाबी नहीं।');
-    var fullPrompt = 'Edit: ' + editPrompt + '. Keep EXACT SAME face, eyes, nose, skin, hair. DO NOT change the face. ONLY change what was asked.';
-    var r = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + k.agnes },
-        body: JSON.stringify({
-            model: 'agnes-image-2.5-flash',
-            prompt: fullPrompt,
-            size: '2K', ratio: '1:1',
-            extra_body: { image: [base64Full], response_format: 'url' }
-        })
-    });
-    if (!r.ok) throw new Error('Agnes एडिट ' + r.status);
-    var d = await r.json();
-    var url = d.data && d.data[0] && d.data[0].url;
-    if (!url) throw new Error('एडिट URL नहीं मिला');
-    return url;
+function toggleMusic(sid){
+    var s = musicSessions[sid];
+    if(!s) return;
+    if(s.playing){ s.stop(); s.playing = false; }
+    else{ s.start(); s.playing = true; }
+    updateMusicBtn(sid);
 }
-
-async function callVeo(text) {
-    if (typeof puter === 'undefined' || !puter.ai) throw new Error('Puter.js लोड नहीं हुआ।');
-    var v = await puter.ai.txt2vid(text, { model: 'google/veo-3.1' });
-    var url = '';
-    if (typeof v === 'string') url = v;
-    else if (v && v.src) url = v.src;
-    else if (v && v.querySelector) { var s = v.querySelector('source'); if (s) url = s.src; }
-    if (!url) throw new Error('वीडियो URL नहीं मिला');
-    return url;
-}
-
-function playMusic(prompt) {
-    try {
-        var ctx = new (window.AudioContext || window.webkitAudioContext)();
-        var t = prompt.toLowerCase();
-        var wave = 'triangle', dur = 0.8, label = 'पियानो';
-        if (/guitar|गिटार/.test(t)) { wave='sawtooth'; dur=0.6; label='गिटार'; }
-        else if (/flute|बांसुरी/.test(t)) { wave='sine'; dur=0.5; label='बांसुरी'; }
-        else if (/violin|वायलिन/.test(t)) { wave='sawtooth'; dur=0.7; label='वायलिन'; }
-        else if (/drum|ढोल|तबला/.test(t)) { wave='square'; dur=0.15; label='ढोल'; }
-        var C=261.63,D=293.66,E=329.63,F=349.23,G=392,A=440,B=493.88;
-        var scale = [C,D,E,F,G,A,B,523.25], tempo = 0.4;
-        if (/sad|दुखी/.test(t)) tempo = 0.55;
-        else if (/happy|खुश/.test(t)) tempo = 0.32;
-        else if (/fast|तेज़/.test(t)) tempo = 0.2;
+function createMusicPlayer(prompt){
+    stopAllMusic();
+    if(!userHasInteracted){
+        return '<span class="msg-text">🔊 पहले स्क्रीन पर कहीं <b>tap</b> करो (ब्राउज़र नीति), फिर "संगीत बजाओ" बोलो।</span>';
+    }
+    var t = String(prompt).toLowerCase();
+    var wave = "triangle", label = "पियानो", mood = "normal";
+    if(/guitar|गिटार/.test(t)){ wave = "sawtooth"; label = "गिटार"; }
+    else if(/flute|बांसुरी/.test(t)){ wave = "sine"; label = "बांसुरी"; }
+    else if(/violin|वायलिन/.test(t)){ wave = "sawtooth"; label = "वायलिन"; }
+    else if(/sitar|सितार/.test(t)){ wave = "triangle"; label = "सितार"; }
+    else if(/drum|ढोल|तबला/.test(t)){ wave = "square"; label = "ढोल"; }
+    else if(/electronic|इलेक्ट्रॉनिक|band|बैंड/.test(t)){ wave = "square"; label = "इलेक्ट्रॉनिक"; }
+    if(/sad|दुखी/.test(t)) mood = "sad";
+    else if(/happy|खुश/.test(t)) mood = "happy";
+    else if(/calm|शांत/.test(t)) mood = "calm";
+    var ctx = getAudioCtx();
+    if(!ctx){ return '<span class="msg-text">❌ Audio support नहीं है।</span>'; }
+    var scale;
+    if(mood === "sad") scale = [220.00,246.94,261.63,293.66,329.63,349.23,392.00,440.00];
+    else if(mood === "happy") scale = [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25];
+    else if(mood === "calm") scale = [261.63,329.63,392.00,523.25,659.25,783.99,1046.50,1318.51];
+    else scale = [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25];
+    var tempo = (mood === "sad") ? 0.65 : (mood === "happy") ? 0.28 : (mood === "calm") ? 0.8 : 0.4;
+    var sid = "m" + (++musicSessionCounter);
+    var oscillators = [], autoTimer = null;
+    var durationSec = 20;
+    function startPlayback(){
         var idx = 2, start = ctx.currentTime + 0.1;
-        for (var i = 0; i < 20; i++) {
-            idx = Math.max(0, Math.min(scale.length-1, idx + Math.floor(Math.random()*5)-2));
+        oscillators = [];
+        for(var i = 0; i < 20; i++){
+            idx = Math.max(0, Math.min(scale.length - 1, idx + Math.floor(Math.random() * 5) - 2));
             var o = ctx.createOscillator(), g = ctx.createGain();
             o.type = wave;
             o.frequency.value = scale[idx];
-            var s = start + i*tempo;
+            var s = start + i * tempo;
             g.gain.setValueAtTime(0, s);
             g.gain.linearRampToValueAtTime(0.15, s + 0.01);
-            g.gain.exponentialRampToValueAtTime(0.001, s + dur + 0.5);
-            o.connect(g); g.connect(ctx.destination);
-            o.start(s); o.stop(s + dur + 0.6);
+            g.gain.exponentialRampToValueAtTime(0.001, s + 1.0);
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.start(s);
+            o.stop(s + 1.1);
+            oscillators.push(o);
         }
-        setTimeout(() => { try { ctx.close(); } catch(e) {} }, 20000);
-        return '🎵 ' + label + ' का संगीत बज रहा है!';
-    } catch(e) { return '❌ संगीत विफल: ' + e.message; }
+        if(autoTimer) clearTimeout(autoTimer);
+        autoTimer = setTimeout(function(){
+            if(musicSessions[sid]){
+                musicSessions[sid].stop();
+                musicSessions[sid].playing = false;
+                updateMusicBtn(sid);
+            }
+        }, durationSec * 1000);
+    }
+    function stopPlayback(){
+        oscillators.forEach(function(o){ try{ o.stop(); }catch(e){} });
+        oscillators = [];
+        if(autoTimer) clearTimeout(autoTimer);
+    }
+    var session = {
+        playing: true,
+        start: function(){ startPlayback(); this.playing = true; },
+        stop: function(){ stopPlayback(); this.playing = false; }
+    };
+    musicSessions[sid] = session;
+    startPlayback();
+    var html = '<div style="background:#e3f2fd;border:1px solid #00c6ff;border-radius:14px;padding:12px;display:flex;align-items:center;gap:12px;">' +
+        '<button id="musicbtn_' + sid + '" onclick="toggleMusic(\'' + sid + '\')" style="width:46px;height:46px;border:none;border-radius:50%;background:#00c6ff;color:#fff;font-size:1.2em;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">⏸</button>' +
+        '<div style="flex:1;color:#000;">' +
+        '<div style="font-weight:700;font-size:.95em;">🎵 ' + label + ' का संगीत</div>' +
+        '<div id="musicst_' + sid + '" style="font-size:.75em;color:#555;margin-top:3px;">बज रहा है — लगभग 20 सेकंड</div>' +
+        '</div></div>';
+    return html;
 }
 
-// ============ भेजना ============
-async function sendMessage() {
-    var inp = document.getElementById('input');
-    var text = inp.value.trim();
-    var shot = screenShotData;
-    screenShotData = null;
+// ============ चैट इतिहास (quota-safe) ============
+function loadChats(){
+    try{
+        var s = localStorage.getItem(CHATS_KEY);
+        if(s) allChats = JSON.parse(s);
+    }catch(e){ allChats = {}; }
+}
+function saveChats(){
+    function tryWrite(){ localStorage.setItem(CHATS_KEY, JSON.stringify(allChats)); }
+    function trimContent(chat, maxChars){
+        chat.messages.forEach(function(m){
+            var c = String(m.content || "");
+            if(c.length > maxChars) m.content = c.substring(0, maxChars) + "...[छोटा]";
+        });
+    }
+    // Step 0: सीधा try
+    try{ tryWrite(); return; }catch(e){}
 
-    if (!text && !attachedFile && !shot) return;
+    // Step 1: long messages trim
+    var ids = Object.keys(allChats).sort(function(a,b){
+        return (allChats[a].created || 0) - (allChats[b].created || 0);
+    });
+    ids.forEach(function(id){ trimContent(allChats[id], 4000); });
+    try{ tryWrite(); return; }catch(e){}
 
-    inp.value = '';
-    inp.style.height = 'auto';
+    // Step 2: पुरानी आधी chats हटाओ
+    for(var i = 0; i < Math.ceil(ids.length / 2); i++) delete allChats[ids[i]];
+    try{ tryWrite(); return; }catch(e){}
 
-    var userShow = escapeHtml(text);
-    if (attachedFile) userShow = '🖼️ ' + escapeHtml(attachedFile.name) + (text ? '<br>' + escapeHtml(text) : '');
-    if (shot) userShow = '📱 [स्क्रीनशॉट]' + (text ? '<br>' + escapeHtml(text) : '');
-    addMsg('user', userShow);
+    // Step 3: और हटाओ
+    ids = Object.keys(allChats).sort(function(a,b){
+        return (allChats[a].created || 0) - (allChats[b].created || 0);
+    });
+    for(var j = 0; j < Math.ceil(ids.length / 2); j++) delete allChats[ids[j]];
+    try{ tryWrite(); return; }catch(e){}
 
-    var load = addMsg('bot', '<div class="loading">⏳ सोच रहा हूँ...</div>');
-    var btn = document.getElementById('sendBtn');
-    btn.disabled = true;
+    // Step 4: सिर्फ़ current chat रखो
+    if(currentChatId && allChats[currentChatId]){
+        var keep = allChats[currentChatId];
+        trimContent(keep, 2000);
+        allChats = {};
+        allChats[currentChatId] = keep;
+        try{ tryWrite(); }catch(e2){
+            console.error("localStorage भर गया — chat save fail");
+        }
+    }
+}
+function createNewChat(){
+    var id = "chat_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
+    allChats[id] = {id: id, title: "नई बातचीत", messages: [], created: Date.now()};
+    saveChats();
+    return id;
+}
+function renderSessions(){
+    var list = document.getElementById("sessionsList");
+    list.innerHTML = "";
+    var ids = Object.keys(allChats).sort(function(a,b){
+        return allChats[b].created - allChats[a].created;
+    });
+    if(ids.length === 0){
+        list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.4);padding:20px;font-size:.85em;">अभी कोई बातचीत नहीं</div>';
+        return;
+    }
+    ids.forEach(function(id){
+        var chat = allChats[id];
+        var el = document.createElement("div");
+        el.className = "session-item" + (id === currentChatId ? " active" : "");
+        var safeTitle = escapeAttr(chat.title || "बातचीत");
+        el.innerHTML = '<span class="title">💬 ' + safeTitle + '</span>' +
+            '<button class="delete-btn" onclick="deleteChat(event, \'' + id + '\')">🗑️</button>';
+        el.onclick = function(e){
+            if(!e.target.classList.contains("delete-btn")) openChat(id);
+        };
+        list.appendChild(el);
+    });
+}
+function deleteChat(e, id){
+    e.stopPropagation();
+    if(!confirm("यह बातचीत मिटानी है?")) return;
+    delete allChats[id];
+    saveChats();
+    if(currentChatId === id) newChat();
+    else renderSessions();
+}
+function openChat(id){
+    sendToken++;
+    stopAllMusic();
+    currentChatId = id;
+    var chat = allChats[id];
+    if(!chat) return;
+    messagesEl.innerHTML = "";
+    lastGeneratedImageUrl = null;
+    chat.messages.forEach(function(m){
+        addMessage(m.role, m.content, m.brain, true);
+    });
+    document.getElementById("chatTitle").textContent = "💬 " + (chat.title || "बातचीत");
+    lastIntent = null;
+    lastPrompt = null;
+    pendingScreenshot = null;
+    removeTyping();
+    var sb = document.getElementById("sendBtn");
+    if(sb) sb.disabled = false;
+    var userMsgs = chat.messages.filter(function(m){ return m.role === "user"; });
+    if(userMsgs.length > 0) lastPrompt = userMsgs[userMsgs.length - 1].content;
+    toggleSidebar();
+    renderSessions();
+}
+function saveMessageToChat(role, content, brain){
+    if(!currentChatId) return;
+    var chat = allChats[currentChatId];
+    if(!chat) return;
+    var saveContent = content;
+    if(saveContent && saveContent.indexOf("<video") === 0){
+        var m = saveContent.match(/src="([^"]+)"/);
+        if(m) saveContent = "[VIDEO]" + m[1];
+    } else if(saveContent && saveContent.indexOf("<img") === 0){
+        var m2 = saveContent.match(/src="([^"]+)"/);
+        if(m2) saveContent = "[IMAGE]" + m2[1];
+    }
+    chat.messages.push({role: role, content: saveContent, brain: brain, time: Date.now()});
+    if(chat.title === "नई बातचीत" && role === "user"){
+        chat.title = String(content).substring(0, 30).replace(/[\n<>&"']/g, " ").trim() + (content.length > 30 ? "..." : "");
+        document.getElementById("chatTitle").textContent = "💬 " + chat.title;
+    }
+    saveChats();
+    renderSessions();
+}
+function newChat(){
+    sendToken++;
+    stopAllMusic();
+    pendingScreenshot = null;
+    removeTyping();
+    var sb = document.getElementById("sendBtn");
+    if(sb) sb.disabled = false;
+    currentChatId = createNewChat();
+    messagesEl.innerHTML = '<div class="welcome"><h2>नमस्ते! नई बातचीत 💬</h2><p>कुछ भी पूछो, बनवाओ।</p></div>';
+    document.getElementById("chatTitle").textContent = "⚡ AI assistant Ayush";
+    lastGeneratedImageUrl = null;
+    removeFile();
+    lastIntent = null;
+    lastPrompt = null;
+    renderSessions();
+    if(document.getElementById("sidebar").classList.contains("open")) toggleSidebar();
+}
+function toggleSidebar(){
+    var sidebar = document.getElementById("sidebar");
+    var isOpening = !sidebar.classList.contains("open");
+    sidebar.classList.toggle("open");
+    document.getElementById("overlay").classList.toggle("open");
+    if(isOpening){ try{ history.pushState({sb: true}, ""); }catch(e){} }
+}
+window.addEventListener("popstate", function(){
+    var sidebar = document.getElementById("sidebar");
+    if(sidebar && sidebar.classList.contains("open")){
+        sidebar.classList.remove("open");
+        document.getElementById("overlay").classList.remove("open");
+    }
+});
+function getHistory(){
+    if(!currentChatId) return [];
+    var chat = allChats[currentChatId];
+    if(!chat || !chat.messages) return [];
+    var valid = chat.messages.filter(function(m){
+        if(m.role !== "user" && m.role !== "assistant") return false;
+        if(m.brain === "त्रुटि") return false;
+        var c = String(m.content || "");
+        if(c.indexOf("<img") === 0 || c.indexOf("<video") === 0 || c.indexOf("<audio") === 0 || c.indexOf("<div style=") === 0) return false;
+        if(c.indexOf("[VIDEO]") === 0 || c.indexOf("[IMAGE]") === 0) return false;
+        return true;
+    });
+    valid = valid.slice(-HISTORY_LIMIT);
+    var cleaned = [];
+    for(var k = 0; k < valid.length; k++){
+        var m = valid[k];
+        var c = String(m.content || "");
+        if(c.length > HISTORY_CHAR_LIMIT) c = c.substring(0, HISTORY_CHAR_LIMIT) + "... [छोटा]";
+        if(cleaned.length && cleaned[cleaned.length - 1].role === m.role){
+            cleaned[cleaned.length - 1].content += "\n\n" + c;
+        } else {
+            cleaned.push({role: m.role, content: c});
+        }
+    }
+    if(cleaned.length && cleaned[0].role !== "user") cleaned.shift();
+    return cleaned;
+}
 
-    var fileToProcess = attachedFile;
+// ============ स्तर 1 — Regex ============
+function localDetectIntent(text){
+    var raw = String(text || "").trim(), t = raw.toLowerCase();
+    if(!t) return "CHAT";
+    if(/(संगीत|गाना|म्यूजिक|music|song|धुन|पियानो|गिटार|बांसुरी|वायलिन|सितार|ढोल|तबला|इलेक्ट्रॉनिक|बैंड)\s*(बंद|बन्द|रोको|रुको|stop)/i.test(t)) return "STOP_MUSIC";
+    if(/^(बंद|बन्द|रोको|रुको|stop)\s*(करो|कर)?\s*$/i.test(t)) return "STOP_MUSIC";
+    var isNeg = /(^|\s)(नहीं|नही|मत|बंद|रुको|रोको|छोड़ो|छोडो|nahi|nahin|mat|band|ruko|chhodo|no|not|don'?t|stop)(\s|$)/i.test(t);
+    var isQ = /(^|\s)(क्या|क्यों|क्यूं|कैसे|कैसा|कैसी|कौन|कब|कहाँ|कहां|कितना|कितनी|कितने|किसने|किसको|किसे|किसका|किसकी|किसके|कौनसा|कौनसी|कौनसे|किस|what|why|how|when|where|who|which|whose)(\s|$|\?)/i.test(t) || /[?？]/.test(raw);
+    var verbs = /(बनाओ|बनाएं|बनायें|बनाइए|बनाइये|बनावो|बनवाओ|बना\s|बनाना|बनाने|बनाए|बनाकर|बनाके|बजाओ|बजाएं|बजाइए|बजावो|बजा\s|बजाना|बजाने|बजाए|बजाकर|चलाओ|चलाएं|चलाइए|चला\s|चलाना|चलाने|चलाकर|सुनाओ|सुनाएं|सुनाइए|सुना\s|सुनाना|सुनाने|लिखो|लिखिए|लिख\s|लिखना|लिखने|लिखकर|करो|करिए|कर\s|करना|करने|करके|दो|दीजिए|दीजिये|दे\s|देना|देने|देकर|खींचो|खींचिए|खींच\s|खींचना|खींचने|दिखाओ|दिखाएं|दिखाइए|दिखा\s|दिखाना|दिखाने|दिखाकर|चाहिए|चाहिये|चाहता|चाहती|चाहते|जनरेट|जेनरेट|\bplay\b|\bcreate\b|\bmake\b|\bgenerate\b|\bdraw\b|\bwrite\b|\bsend\b|\bshow\b|\bopen\b|\bgive\b|\bdo\b|\bwant\b|\bneed\b|\bdisplay\b)/i.test(t);
+    var isImage = /(तस्वीर|तसवीर|फोटो|फ़ोटो|चित्र|इमेज|\bimage\b|\bphoto\b|\bpicture\b|\bdrawing\b|पेंटिंग|\bpainting\b|तस्वीरें|फोटोज़|पिक्चर|\bpic\b|tasveer|chitra|\bartwork\b|\bart\b)/i.test(t);
+    var isVideo = /(वीडियो|विडियो|\bvideo\b|मूवी|\bmovie\b|फिल्म|\bfilm\b|क्लिप|\bclip\b|एनिमेशन|\banimation\b|\breel\b)/i.test(t);
+    var isMusic = /(संगीत|सगीत|गाना|गाने|गीत|म्यूजिक|\bmusic\b|\bsong\b|\btune\b|धुन|ट्यून|मेलोडी|\bmelody\b|पियानो|\bpiano\b|गिटार|\bguitar\b|बांसुरी|\bbansuri\b|\bflute\b|वायलिन|\bviolin\b|सितार|\bsitar\b|ढोल|\bdhol\b|तबला|\btabla\b|\bdrum|\bdrums\b|इलेक्ट्रॉनिक|\belectronic\b|\binstrument\b|वाद्य|\bband\b)/i.test(t);
+    if(isQ) return "CHAT";
+    if(isNeg) return "CHAT";
+    if(isVideo && verbs) return "CREATE_VIDEO";
+    if(isImage && verbs) return "CREATE_IMAGE";
+    if(isMusic && verbs) return "PLAY_MUSIC";
+    return "CHAT";
+}
+
+// ============ स्तर 2 — वोटिंग ============
+function buildIntentPrompt(text){
+    return 'तुम हिंदी समझने वाले expert हो। संदेश: "' + text + '"\n\nसिर्फ़ एक शब्द में बताओ:\n-CREATE_IMAGE\n-CREATE_VIDEO\n-PLAY_MUSIC\n-CHAT\n\nसिर्फ़ एक शब्द।';
+}
+function parseIntent(raw){
+    var r = String(raw || "").toUpperCase();
+    if(/CREATE_IMAGE/.test(r)) return "CREATE_IMAGE";
+    if(/CREATE_VIDEO/.test(r)) return "CREATE_VIDEO";
+    if(/PLAY_MUSIC/.test(r)) return "PLAY_MUSIC";
+    if(/\bCHAT\b/.test(r)) return "CHAT";
+    return null;
+}
+async function groqVote(text, keys){
+    if(!keys.groq || keys.groq.indexOf("gsk_") !== 0) return null;
+    try{ return parseIntent(await callGroq(buildIntentPrompt(text), keys, "You are a Hindi intent classifier. Reply ONE word only.", null)); }
+    catch(e){ return null; }
+}
+async function agnesVote(text, keys){
+    if(!keys.agnes || keys.agnes.indexOf("sk-") !== 0) return null;
+    try{
+        var r = await fetch("https://apihub.agnes-ai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {"Authorization": "Bearer " + keys.agnes, "Content-Type": "application/json"},
+            body: JSON.stringify({
+                model: "agnes-chat-2.0",
+                messages: [
+                    {role: "system", content: "Reply ONE word only."},
+                    {role: "user", content: buildIntentPrompt(text)}
+                ],
+                max_tokens: 20
+            })
+        });
+        if(!r.ok) return null;
+        var d = await r.json();
+        return parseIntent(d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content);
+    }catch(e){ return null; }
+}
+async function geminiVote(text, keys){
+    if(!keys.gemini) return null;
+    try{ return parseIntent(await callGemini(buildIntentPrompt(text), keys)); }
+    catch(e){ return null; }
+}
+async function votingDetectIntent(text, keys){
+    var local = localDetectIntent(text);
+    if(local !== "CHAT") return local;
+    var onlyCmd = /^(और\s*बनाओ|और\s*बजाओ|फिर\s*बनाओ|फिर\s*बजाओ|दोबारा\s*बनाओ|दोबारा\s*बजाओ|one\s*more|again|बनाओ|बजाओ|करो|कर\s*दो)[\s।.!?]*$/i.test(text.trim());
+    if(onlyCmd && lastIntent && lastIntent !== "CHAT" && lastIntent !== "UNKNOWN") return lastIntent;
+    var t = String(text || "").trim(), tl = t.toLowerCase();
+    var hasActionVerb = /(बनाओ|बनाएं|बना\s*दो|बना\s*दीजिए|बजाओ|बजा\s*दो|चलाओ|चला\s*दो|जनरेट|जेनरेट|खींचो|खींचिए|लिखो|लिखिए)/i.test(tl);
+    var isGuessOrQuestion = /(अपने\s*मन\s*से|अंदाज़ा|अंदाजा|लगभग|अनुमान|अनुमानित|शायद|\bguess\b|\bestimate\b|\bprobably\b|\bmaybe\b)/i.test(tl) || /(^|\s)(क्या|क्यों|क्यूं|कैसे|कौन|कब|कहाँ|कहां|कितना|कितनी|कितने|किसने|किसको|किसे|किसका|किसकी|किसके)(\s|$|\?)/i.test(tl) || /[?？]/.test(t);
+    if(isGuessOrQuestion && !hasActionVerb) return "CHAT";
+    if((!keys.groq || keys.groq.indexOf("gsk_") !== 0) && (!keys.agnes || keys.agnes.indexOf("sk-") !== 0) && !keys.gemini) return "CHAT";
+    var v1 = await groqVote(text, keys), v2 = await agnesVote(text, keys);
+    if(v2 === null){
+        if(v1 === null){ var v3 = await geminiVote(text, keys); return v3 || "CHAT"; }
+        var v4 = await geminiVote(text, keys);
+        if(v4 && v4 === v1) return v1;
+        if(v4 === null) return v1;
+        return "UNKNOWN";
+    }
+    if(v1 === null){
+        var v5 = await geminiVote(text, keys);
+        if(v5 && v5 === v2) return v2;
+        if(v5 === null) return v2;
+        return "UNKNOWN";
+    }
+    if(v1 === v2) return v1;
+    var v6 = await geminiVote(text, keys);
+    if(v6 === v1) return v1;
+    if(v6 === v2) return v2;
+    return "UNKNOWN";
+}
+
+// ============ हिंदी → अंग्रेज़ी ============
+async function hindiToEnglishPrompt(hindiText, keys, forVideo){
+    var sys;
+    if(forVideo){
+        sys = "Convert Hindi/Hinglish video request to detailed English video prompt. RULES: 1. Translate ONLY scene/setting/action. 2. If DIALOGUE mentioned, keep it EXACTLY in original language. 3. If 'apne man se', invent a beautiful cinematic scene. 4. ALWAYS end with: ' — no text, no words, no letters, no captions, no subtitles, no watermark, no logo, no typography, just clean cinematic visuals.' 5. Reply ONLY with English prompt.";
+    } else {
+        sys = "Convert Hindi/Hinglish request to detailed English AI image prompt. Reply ONLY with English prompt. If 'apne man se', just describe a nice scene. Keep all details.";
+    }
+    var raw = null;
+    if(keys.groq && keys.groq.indexOf("gsk_") === 0){
+        try{ raw = await callGroq(hindiText, keys, sys, null); }catch(e){ raw = null; }
+    }
+    if(!raw && keys.gemini){
+        try{ raw = await callGemini(sys + "\n\nUser request: " + hindiText, keys); }catch(e){ raw = null; }
+    }
+    if(!raw) return hindiText;
+    var cleaned = String(raw).trim().split("\n")[0].replace(/^["']|["']$/g, "").trim();
+    if(cleaned.length > 5 && cleaned.length < 900) return cleaned;
+    cleaned = String(raw).trim().replace(/^["']|["']$/g, "").trim();
+    if(cleaned.length > 5 && cleaned.length < 900) return cleaned;
+    return hindiText;
+}
+
+// ============ 🔍 ताज़ा खबर detection ============
+function needsWebSearch(text){
+    var t = String(text || "").trim().toLowerCase();
+    if(/youtube\.com\/watch|youtu\.be\//i.test(t)) return "youtube";
+    var strongSearch = /(ताज़ा\s*(खबर|समाचार|अपडेट)|ब्रेकिंग|latest\s*news|breaking\s*news|आज\s*की\s*खबर|आज\s*का\s*मौसम|aaj\s*ki\s*khabar|current\s*news|मौसम\s*कैसा|तापमान\s*कितना|weather\s*in|सोने\s*का\s*भाव|आज\s*का\s*भाव|stock\s*price|share\s*price\s*of|election\s*result|मैच\s*का\s*स्कोर|aaj\s*ka\s*score|today'?s\s*match)/i.test(t);
+    if(strongSearch) return "search";
+    return null;
+}
+
+// ============ भाषा ============
+var langChips = document.querySelectorAll(".lang-chip");
+for(var i = 0; i < langChips.length; i++){
+    langChips[i].addEventListener("click", function(){
+        var all = document.querySelectorAll(".lang-chip");
+        for(var j = 0; j < all.length; j++) all[j].classList.remove("active");
+        this.classList.add("active");
+        currentLang = this.getAttribute("data-lang");
+        if(recognition){ try{ recognition.lang = currentLang; }catch(e){} }
+    });
+}
+
+// ============ फ़ाइल ============
+function handleFileSelect(event){
+    var file = event.target.files[0];
+    if(!file) return;
+    if(file.size > 50 * 1024 * 1024){ alert("फ़ाइल 50 MB से बड़ी।"); return; }
+    attachedFile = file;
+    document.getElementById("attachBtn").classList.add("has-file");
+    document.getElementById("filePreview").classList.add("show");
+    document.getElementById("fileName").textContent = file.name;
+    document.getElementById("fileSize").textContent = formatSize(file.size);
+    var icon = "📄", ft = file.type || "", fn = file.name || "";
+    if(ft.indexOf("image/") === 0 || /\.(jpg|jpeg|png|webp|gif|bmp|heic|heif|avif|tiff|tif)$/i.test(fn)) icon = "🖼️";
+    else if(ft.indexOf("video/") === 0 || /\.(mp4|mov|avi|mkv|webm|3gp|m4v)$/i.test(fn)) icon = "🎬";
+    else if(ft.indexOf("audio/") === 0) icon = "🎵";
+    else if(ft === "application/pdf" || /\.pdf$/i.test(fn)) icon = "📕";
+    document.getElementById("fileIcon").textContent = icon;
+    if(ft.indexOf("image/") === 0 || /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(fn)){
+        var reader = new FileReader();
+        reader.onload = function(e){
+            var t = document.getElementById("fileThumb");
+            t.src = e.target.result;
+            t.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById("fileThumb").style.display = "none";
+    }
+}
+function formatSize(b){
+    if(b < 1024) return b + " B";
+    if(b < 1048576) return (b / 1024).toFixed(1) + " KB";
+    return (b / 1048576).toFixed(1) + " MB";
+}
+function removeFile(){
     attachedFile = null;
+    document.getElementById("attachBtn").classList.remove("has-file");
+    document.getElementById("filePreview").classList.remove("show");
+    document.getElementById("fileInput").value = "";
+    document.getElementById("fileThumb").style.display = "none";
+}
+function fileToBase64(file){
+    return new Promise(function(res, rej){
+        var r = new FileReader();
+        r.onload = function(){ res(r.result.split(",")[1]); };
+        r.onerror = rej;
+        r.readAsDataURL(file);
+    });
+}
+function fileToBase64Full(file){
+    return new Promise(function(res, rej){
+        var r = new FileReader();
+        r.onload = function(){ res(r.result); };
+        r.onerror = rej;
+        r.readAsDataURL(file);
+    });
+}
+function fileToText(file){
+    return new Promise(function(res, rej){
+        var r = new FileReader();
+        r.onload = function(){ res(r.result); };
+        r.onerror = rej;
+        r.readAsText(file);
+    });
+}
+function prepareImage(file, maxSize){
+    return new Promise(function(resolve, reject){
+        var max = maxSize || 1200, img = new Image(), url = URL.createObjectURL(file), done = false;
+        function finish(result){
+            if(done) return;
+            done = true;
+            try{ URL.revokeObjectURL(url); }catch(e){}
+            resolve(result);
+        }
+        function fail(err){
+            if(done) return;
+            done = true;
+            try{ URL.revokeObjectURL(url); }catch(e){}
+            reject(err);
+        }
+        img.onload = function(){
+            try{
+                var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+                if(w > max || h > max){
+                    if(w > h){ h = Math.round(h * max / w); w = max; }
+                    else{ w = Math.round(w * max / h); h = max; }
+                }
+                var canvas = document.createElement("canvas");
+                canvas.width = w; canvas.height = h;
+                canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                var data = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+                canvas.width = 0; canvas.height = 0;
+                finish(data);
+            }catch(e){ fail(e); }
+        };
+        img.onerror = function(){
+            fail(new Error("इस फ़ोटो को पढ़ नहीं पाया। iPhone (HEIC) हो तो JPG/PNG में या screenshot में भेजो।"));
+        };
+        img.src = url;
+        setTimeout(function(){ if(!done) fail(new Error("फ़ोटो तैयार करने में ज़्यादा समय लगा।")); }, 12000);
+    });
+}
 
-    try {
-        var reply = '';
+// ============ वीडियो frame (memory-safe) ============
+function videoToFrame(file){
+    return new Promise(function(resolve, reject){
+        var video = document.createElement("video");
+        var url = URL.createObjectURL(file);
+        var done = false;
+        video.preload = "metadata";
+        video.muted = true;
+        video.playsInline = true;
+        video.src = url;
 
-        // स्क्रीनशॉट → विज़न
-        if (shot) {
-            load.innerHTML = '<div class="loading">👁️ स्क्रीन देख रहा हूँ...</div>';
-            reply = formatReply(await callGemini(text || 'इस स्क्रीन में क्या है? हिंदी में बताओ।', shot));
+        function cleanup(){
+            try{ video.pause(); }catch(e){}
+            try{ video.removeAttribute("src"); video.load(); }catch(e){}
+            try{ URL.revokeObjectURL(url); }catch(e){}
+            video = null;
         }
-        // फ़ोटो एडिट
-        else if (fileToProcess && /(edit|एडिट|बदलो|badlo|रंग|color|shirt|कमीज़|baal|बाल|चश्मा|pila|पीला|laal|लाल|neela|नीला)/i.test(text) && !/नहीं|मत|nahi|mat/.test(text)) {
-            load.innerHTML = '<div class="loading">✏️ फ़ोटो एडिट हो रही है...</div>';
-            var b64 = await new Promise(r => { var fr = new FileReader(); fr.onload = () => r(fr.result.split(',')[1]); fr.readAsDataURL(fileToProcess); });
-            var editUrl = await callAgnesEdit(b64, text);
-            reply = '<img src="' + editUrl + '" alt=""><br>✏️ चेहरा वही, बदलाव सिर्फ़ जो कहा';
-        }
-        // वीडियो
-        else if (/(video|वीडियो)/i.test(text) && /(banao|बनाओ|create|make|generate)/i.test(text) && !/नहीं|मत|nahi|mat/.test(text)) {
-            load.innerHTML = '<div class="loading">🎬 Veo 3.1 से वीडियो बन रहा है... 30-60 सेकंड</div>';
-            var vurl = await callVeo(text);
-            reply = '<video controls autoplay loop src="' + vurl + '"></video><br>✅ Veo 3.1 से बना';
-        }
-        // तस्वीर बनाना
-        else if (/(tasveer|तस्वीर|photo|फोटो|image|चित्र)/i.test(text) && /(banao|बनाओ|create|make|generate|draw)/i.test(text) && !/नहीं|मत|nahi|mat|video|वीडियो/.test(text)) {
-            load.innerHTML = '<div class="loading">🎨 Agnes से तस्वीर बन रही है...</div>';
-            var iurl = await callAgnesImage(text);
-            reply = '<img src="' + iurl + '" alt=""><br>🎨 Agnes Image 2.5 (2K)';
-        }
-        // संगीत
-        else if (/(music|संगीत|गाना|gaan|song|धुन|melody|bajao|बजाओ|suna|सुना)/i.test(text)) {
-            load.innerHTML = '<div class="loading">🎵 संगीत...</div>';
-            reply = playMusic(text);
-        }
-        // फ़ोटो भेजी है — देखो और बताओ
-        else if (fileToProcess && fileToProcess.type.startsWith('image/')) {
-            load.innerHTML = '<div class="loading">👁️ फ़ोटो देख रहा हूँ...</div>';
-            var fb = await new Promise(r => { var fr = new FileReader(); fr.onload = () => r(fr.result.split(',')[1]); fr.readAsDataURL(fileToProcess); });
-            reply = formatReply(await callGemini(text || 'इस फ़ोटो में क्या है? हिंदी में बताओ।', fb));
-        }
-        // सामान्य बातचीत
-        else {
-            load.innerHTML = '<div class="loading">💬 सोच रहा हूँ...</div>';
-            try {
-                reply = await callGemini(CAP + '\n\nउपयोगकर्ता: ' + text);
-            } catch(e1) {
-                reply = await callGroq(text, CAP);
-            }
-            reply = formatReply(reply);
-        }
+        function finish(res){ if(done) return; done = true; cleanup(); resolve(res); }
+        function fail(err){ if(done) return; done = true; cleanup(); reject(err); }
 
-        load.remove();
-        addMsg('bot', reply);
-        speak(reply.replace(/<[^>]+>/g, ''));
+        video.onloadedmetadata = function(){
+            var seekTime = Math.min(1, (video.duration || 2) / 2);
+            try{ video.currentTime = seekTime; }catch(e){ video.currentTime = 0; }
+        };
+        video.onseeked = function(){
+            if(done) return;
+            try{
+                // Downscale large videos to prevent OOM on mobile
+                var MAX_DIM = 1280;
+                var vw = video.videoWidth || 720;
+                var vh = video.videoHeight || 1280;
+                var scale = Math.min(1, MAX_DIM / Math.max(vw, vh));
+                var cw = Math.round(vw * scale);
+                var ch = Math.round(vh * scale);
 
-    } catch(e) {
-        load.remove();
-        addMsg('err', '❌ ' + escapeHtml(e.message) + '<br><br>कृपया फिर से ट्राई करें।');
-    } finally {
+                var canvas = document.createElement("canvas");
+                canvas.width = cw;
+                canvas.height = ch;
+                canvas.getContext("2d").drawImage(video, 0, 0, cw, ch);
+                var data = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+
+                canvas.width = 0; canvas.height = 0;
+                canvas = null;
+
+                finish(data);
+            }catch(e){ fail(e); }
+        };
+        video.onerror = function(){ fail(new Error("वीडियो लोड नहीं हो पाई।")); };
+        setTimeout(function(){ if(!done) fail(new Error("वीडियो से frame नहीं निकला।")); }, 15000);
+    });
+}
+
+// ============ स्क्रीन शेयर (mobile-aware) ============
+function isScreenShareSupported(){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) return false;
+    var ua = navigator.userAgent || "";
+    var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    if(isMobile) return false;
+    return true;
+}
+async function toggleScreenShare(){
+    if(screenStream){ stopScreenShare(); return; }
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+        alert("इस ब्राउज़र में स्क्रीन शेयर उपलब्ध नहीं है।\n\n📱 मोबाइल पर यह feature काम नहीं करती।\n💻 कृपया desktop/laptop पर Chrome ब्राउज़र में खोलें।");
+        return;
+    }
+    if(!isScreenShareSupported()){
+        alert("📱 मोबाइल ब्राउज़र स्क्रीन शेयर support नहीं करते।\n\n💻 कृपया laptop/desktop पर Chrome में खोलें।");
+        return;
+    }
+
+    var btn = document.getElementById("screenBtn");
+    btn.disabled = true;
+    try{
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: {cursor: "always"},
+            audio: false
+        });
+        document.getElementById("screenBtn").classList.add("active");
+        document.getElementById("screenStatus").classList.add("show");
+        screenStream.getVideoTracks()[0].addEventListener("ended", stopScreenShare);
+        addMessage("assistant", "📱 स्क्रीन शेयर चालू! अब 🎤 दबाकर बोलो।", "📱 स्क्रीन");
+    }catch(e){
+        var msg = String(e.message || e);
+        if(/permission|denied|not allowed/i.test(msg))
+            alert("स्क्रीन शेयर की अनुमति नहीं मिली।");
+        else if(/not supported|not implemented/i.test(msg))
+            alert("यह ब्राउज़र स्क्रीन शेयर support नहीं करता। Desktop Chrome try करें।");
+        else
+            alert("स्क्रीन शेयर नहीं हो पाई: " + msg);
+    }finally{
         btn.disabled = false;
     }
 }
+function stopScreenShare(){
+    if(screenStream){
+        try{ screenStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+        screenStream = null;
+    }
+    document.getElementById("screenBtn").classList.remove("active");
+    document.getElementById("screenStatus").classList.remove("show");
+}
+async function captureScreenshot(){
+    if(!screenStream) return null;
+    try{
+        var track = screenStream.getVideoTracks()[0];
+        var settings = track.getSettings();
+        var video = document.createElement("video");
+        video.srcObject = screenStream;
+        video.muted = true;
+        await video.play();
+        await new Promise(function(r){ setTimeout(r, 300); });
+        var canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || settings.width || 1280;
+        canvas.height = video.videoHeight || settings.height || 720;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        video.pause();
+        var data = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
+        canvas.width = 0; canvas.height = 0;
+        return data;
+    }catch(e){ return null; }
+}
 
-// ============ इनपुट ============
-var inp = document.getElementById('input');
-inp.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+// ============ आवाज़ ============
+function initRecognition(){
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){
+        alert("तुम्हारे ब्राउज़र/WebView में आवाज़ पहचान उपलब्ध नहीं है। Chrome ब्राउज़र में खोलो।");
+        return null;
+    }
+    var rec = new SR();
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.lang = currentLang;
+    rec.onstart = function(){
+        isRecording = true;
+        var inp = document.getElementById("input");
+        inp.classList.add("listening");
+        document.getElementById("micBtn").classList.add("recording");
+        document.getElementById("micBtn").textContent = "⏹";
+        inp.placeholder = "🎤 सुन रहा हूँ... बोलो";
+        inp.value = "";
+    };
+    rec.onresult = function(e){
+        var f = "", inm = "";
+        for(var i = e.resultIndex; i < e.results.length; i++){
+            var t = e.results[i][0].transcript;
+            if(e.results[i].isFinal) f += t;
+            else inm += t;
+        }
+        document.getElementById("input").value = f || inm;
+    };
+    rec.onerror = function(ev){
+        if(ev.error === "not-allowed")
+            alert("माइक की अनुमति नहीं है। Settings → Apps → Permissions → Microphone चालू करो।");
+        stopMic();
+    };
+    rec.onend = async function(){
+        stopMic();
+        var txt = document.getElementById("input").value.trim();
+        if(screenStream){
+            var shot = await captureScreenshot();
+            if(shot) pendingScreenshot = shot;
+        }
+        if(txt) setTimeout(function(){ sendMessage(); }, 400);
+    };
+    return rec;
+}
+function toggleMic(){
+    if(isRecording){
+        if(recognition){ try{ recognition.stop(); }catch(e){} }
+        return;
+    }
+    recognition = initRecognition();
+    if(!recognition) return;
+    try{ recognition.start(); }
+    catch(e){ alert("माइक शुरू नहीं हो पाई: " + e.message); stopMic(); }
+}
+function stopMic(){
+    isRecording = false;
+    var b = document.getElementById("micBtn");
+    b.classList.remove("recording");
+    b.textContent = "🎤";
+    var inp = document.getElementById("input");
+    inp.classList.remove("listening");
+    if(!inp.value.trim()) inp.placeholder = "कुछ भी पूछो... (🎤 दबाकर बोल सकते हो)";
+}
+
+// ============ TTS (race-safe) ============
+function speakText(text, btn){
+    if(!window.speechSynthesis) return;
+    var myTok = ++ttsToken;
+
+    try{ if(speechSynthesis.paused) speechSynthesis.resume(); }catch(e){}
+
+    // जो बोल रहा था उसे बंद करो
+    if(currentUtterance){
+        try{ speechSynthesis.cancel(); }catch(e){}
+        var btns = document.querySelectorAll(".speak-btn.speaking");
+        for(var i = 0; i < btns.length; i++) btns[i].classList.remove("speaking");
+        // वही बटन दोबारा → toggle off
+        if(btn && btn.getAttribute("data-text") === currentUtterance.__srcText){
+            currentUtterance = null;
+            return;
+        }
+        currentUtterance = null;
+    }
+
+    var clean = String(text)
+        .replace(/```[\s\S]*?```/g, " कोड ब्लॉक ")
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/[#*_>]/g, "")
+        .replace(/<[^>]+>/g, "")
+        .replace(/\n+/g, "। ");
+    if(clean.length > 4000) clean = clean.substring(0, 4000);
+
+    var u = new SpeechSynthesisUtterance(clean);
+    u.lang = currentLang;
+    u.rate = 1;
+    u.__srcText = String(text);
+
+    u.onend = function(){
+        if(myTok !== ttsToken) return;
+        if(btn) btn.classList.remove("speaking");
+        currentUtterance = null;
+    };
+    u.onerror = function(){
+        if(myTok !== ttsToken) return;
+        if(btn) btn.classList.remove("speaking");
+        currentUtterance = null;
+    };
+
+    currentUtterance = u;
+    if(btn) btn.classList.add("speaking");
+
+    // cancel() के बाद race — छोटा delay
+    setTimeout(function(){
+        if(myTok !== ttsToken) return;
+        try{ speechSynthesis.speak(u); }catch(e){}
+    }, 60);
+}
+function toggleAutoSpeak(){
+    autoSpeak = !autoSpeak;
+    var b = document.getElementById("autoSpeakBtn");
+    b.textContent = autoSpeak ? "🔊" : "🔇";
+    b.classList.toggle("active", autoSpeak);
+    addMessage("assistant", autoSpeak ? "🔊 अब हर जवाब अपने आप बोलेगा।" : "🔇 अब जवाब सिर्फ़ लिखा हुआ आएगा।", "💬");
+}
+
+// ============ संदेश ============
+function addMessage(role, content, brainName, skipSave){
+    var w = document.querySelector(".welcome");
+    if(w) w.remove();
+    if(content && content.indexOf("[VIDEO]") === 0){
+        var vu = content.substring(7);
+        content = '<video controls autoplay loop muted playsinline src="' + vu + '"></video>';
+    } else if(content && content.indexOf("[IMAGE]") === 0){
+        var iu = content.substring(7);
+        content = '<img src="' + iu + '" alt="">';
+    }
+    var el = document.createElement("div");
+    el.className = "message " + role;
+    if(brainName === "त्रुटि") el.classList.add("error-box");
+    var isMedia = content && (content.indexOf("<img") === 0 || content.indexOf("<video") === 0 || content.indexOf("<audio") === 0 || content.indexOf("<div style=") === 0);
+    var html = "";
+    if(role === "assistant" && /बैकअप/.test(String(brainName || "")))
+        html += '<span class="rate-note">⚠️ मुख्य दिमाग़ की लिमिट ख़त्म — बैकअप सक्रिय</span>';
+    if(brainName && role === "assistant" && brainName !== "त्रुटि")
+        html += '<span class="brain-tag">' + escapeAttr(brainName) + '</span>';
+    if(isMedia){
+        html += content;
+    } else {
+        html += '<span class="msg-text">' + formatMessage(content) + '</span>';
+        if(role === "assistant" && content && brainName !== "त्रुटि")
+            html += '<div class="speak-row"><button class="speak-btn" onclick="speakText(this.getAttribute(\'data-text\'), this)" data-text="' + escapeAttr(content) + '">🔊 सुनो</button></div>';
+    }
+    el.innerHTML = html;
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    if(!skipSave) saveMessageToChat(role, content, brainName);
+    if(role === "assistant" && autoSpeak && !isMedia && brainName !== "त्रुटि")
+        setTimeout(function(){ speakText(content, null); }, 400);
+    return el;
+}
+function formatMessage(text){
+    if(!text) return "";
+    var s = String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    s = s.replace(/```(\w+)?\n?([\s\S]*?)```/g, function(m, l, c){ return '<pre><code>' + c + '</code></pre>'; });
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+    s = s.replace(/\n/g, "<br>");
+    return s;
+}
+function addTyping(){
+    var w = document.querySelector(".welcome");
+    if(w) w.remove();
+    var el = document.createElement("div");
+    el.className = "message assistant";
+    el.id = "typingIndicator";
+    el.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function removeTyping(){
+    var el = document.getElementById("typingIndicator");
+    if(el) el.remove();
+}
+function updateTyping(msg){
+    var el = document.getElementById("typingIndicator");
+    if(el) el.innerHTML = '<span class="msg-text">' + msg + '</span>';
+}
+
+// ============ API कॉल ============
+async function callGroq(text, keys, sys, hist){
+    if(!keys.groq || keys.groq.indexOf("gsk_") !== 0) throw new Error("बैकअप चाबी सही नहीं");
+    if(String(text).length > 18000) throw new Error("बैकअप 18,000 अक्षर से बड़ा कोड नहीं पढ़ सकता।");
+    var models = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "llama-3.1-70b-versatile",
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3-32b",
+        "mixtral-8x7b-32768"
+    ];
+    var lastErr = "";
+    for(var i = 0; i < models.length; i++){
+        try{
+            var messages = [{role: "system", content: sys}];
+            if(hist && hist.length) hist.forEach(function(m){ messages.push({role: m.role, content: m.content}); });
+            messages.push({role: "user", content: text});
+            var r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "Authorization": "Bearer " + keys.groq},
+                body: JSON.stringify({model: models[i], messages: messages, temperature: 0.3, max_tokens: 8000})
+            });
+            if(r.ok){
+                var d = await r.json();
+                var out = d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+                if(out && out.trim().length > 2) return out.trim();
+                lastErr = models[i] + " खाली";
+                continue;
+            }
+            lastErr = models[i] + " " + r.status;
+        }catch(e){ lastErr = e.message; }
+    }
+    throw new Error("बैकअप विफल: " + lastErr);
+}
+async function callGroqVision(text, b64, mimeType, keys, sys, hist){
+    if(!keys.groq || keys.groq.indexOf("gsk_") !== 0) throw new Error("बैकअप चाबी सही नहीं");
+    var models = [
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "meta-llama/llama-4-maverick-17b-128e-instruct"
+    ];
+    var lastErr = "";
+    for(var i = 0; i < models.length; i++){
+        try{
+            var messages = [];
+            if(sys) messages.push({role: "system", content: sys});
+            if(hist && hist.length) hist.forEach(function(m){ messages.push({role: m.role, content: m.content}); });
+            messages.push({role: "user", content: [
+                {type: "text", text: text},
+                {type: "image_url", image_url: {url: "data:" + (mimeType || "image/jpeg") + ";base64," + b64}}
+            ]});
+            var r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "Authorization": "Bearer " + keys.groq},
+                body: JSON.stringify({model: models[i], messages: messages, max_tokens: 2000})
+            });
+            if(r.ok){
+                var d = await r.json();
+                var out = d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+                if(out && out.trim().length > 2) return out.trim();
+                lastErr = models[i] + " खाली";
+                continue;
+            }
+            lastErr = models[i] + " " + r.status;
+        }catch(e){ lastErr = e.message; }
+    }
+    throw new Error("बैकअप विज़न विफल: " + lastErr);
+}
+async function callGemini(text, keys, imgB64, mimeType, hist, useSearch, youtubeUrl){
+    if(!keys.gemini) throw new Error("मुख्य चाबी नहीं");
+    var allModels = [
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-latest",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-flash-latest",
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-flash",
+        "gemini-pro-latest"
+    ];
+    var searchModels = [
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-latest",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-flash-latest"
+    ];
+    var models = useSearch ? searchModels : allModels;
+    var endpoints = ["v1beta", "v1"];
+    var lastErr = "", mime = mimeType || "image/jpeg", sawRateLimit = false;
+    for(var e = 0; e < endpoints.length; e++){
+        for(var i = 0; i < models.length; i++){
+            try{
+                var contents = [];
+                if(hist && hist.length){
+                    hist.forEach(function(m){
+                        contents.push({
+                            role: (m.role === "assistant") ? "model" : "user",
+                            parts: [{text: m.content}]
+                        });
+                    });
+                }
+                var parts = [{text: text}];
+                if(imgB64) parts.push({inline_data: {mime_type: mime, data: imgB64}});
+                if(youtubeUrl) parts.push({file_data: {file_uri: youtubeUrl}});
+                contents.push({role: "user", parts: parts});
+                var body = {contents: contents};
+                if(useSearch) body.tools = [{google_search: {}}];
+                var url = "https://generativelanguage.googleapis.com/" + endpoints[e] + "/models/" + models[i] + ":generateContent?key=" + keys.gemini;
+                var r = await fetch(url, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(body)
+                });
+                if(r.ok){
+                    var d = await r.json();
+                    var cand = d.candidates && d.candidates[0];
+                    var txt = cand && cand.content && cand.content.parts && cand.content.parts[0] && cand.content.parts[0].text;
+                    if(txt){
+                        var ground = cand.groundingMetadata || cand.grounding_metadata;
+                        var chunks = ground && (ground.groundingChunks || ground.grounding_chunks);
+                        if(chunks && chunks.length){
+                            var links = [];
+                            chunks.slice(0, 4).forEach(function(ch){
+                                var w = ch.web || ch;
+                                if(w && w.uri){
+                                    var title = w.title || w.uri;
+                                    links.push("• [" + title + "](" + w.uri + ")");
+                                }
+                            });
+                            if(links.length) txt += "\n\n**सोर्स:**\n" + links.join("\n");
+                        }
+                        return txt;
+                    }
+                    lastErr = "खाली जवाब";
+                    continue;
+                }
+                if(r.status === 429) sawRateLimit = true;
+                lastErr = endpoints[e] + "/" + models[i] + " " + r.status;
+            }catch(e2){ lastErr = e2.message; }
+        }
+        if(sawRateLimit) break;
+    }
+    if(useSearch) return await callGemini(text, keys, imgB64, mimeType, hist, false, youtubeUrl);
+    if(sawRateLimit){
+        var err = new Error("मुख्य दिमाग़ लिमिट ख़त्म (429): " + lastErr);
+        err.isRateLimit = true;
+        throw err;
+    }
+    throw new Error("मुख्य दिमाग़ विफल: " + lastErr);
+}
+
+// ============ 🎨 Agnes AI — तस्वीर बनाना (only) ============
+async function callAgnesImage(text, keys){
+    if(!keys.agnes || keys.agnes.indexOf("sk-") !== 0)
+        throw new Error("कलाकार (Agnes AI) चाबी सेट नहीं है। सेटिंग्स में डालें।");
+    updateTyping("🌐 हिंदी → अंग्रेज़ी...");
+    var en = await hindiToEnglishPrompt(text, keys, false);
+    updateTyping("🎨 तस्वीर बन रही है... 15-30 सेकंड");
+    var r = await fetch("https://apihub.agnes-ai.com/v1/images/generations", {
+        method: "POST",
+        headers: {"Authorization": "Bearer " + keys.agnes, "Content-Type": "application/json"},
+        body: JSON.stringify({
+            model: "agnes-image-2.5-flash",
+            prompt: en + ", ultra detailed, 8k, sharp focus, professional photography",
+            size: "2K",
+            ratio: "1:1",
+            extra_body: {response_format: "url"}
+        })
+    });
+    if(!r.ok){
+        var eb = await r.text();
+        throw new Error("कलाकार " + r.status + ": " + String(eb).substring(0, 200));
+    }
+    var d = await r.json();
+    var url = d.data && d.data[0] && d.data[0].url;
+    if(!url) throw new Error("तस्वीर URL नहीं मिला");
+    lastGeneratedImageUrl = url;
+    return '<img src="' + url + '" alt="">';
+}
+
+// तस्वीर बनाना अब सिर्फ़ Agnes से
+async function makeImageWithFallback(text, keys){
+    return await callAgnesImage(text, keys);
+}
+
+// ============ 🎬 वीडियो — Agnes primary + Pollinations fallback ============
+async function callAgnesVideo(text, keys, myToken){
+    if(!keys.agnes || keys.agnes.indexOf("sk-") !== 0) throw new Error("कलाकार चाबी नहीं");
+
+    updateTyping("🌐 हिंदी → अंग्रेज़ी (डायलॉग वैसा ही)...");
+    var en = await hindiToEnglishPrompt(text, keys, true);
+
+    updateTyping("🎬 वीडियो बन रहा है... 1-3 मिनट");
+
+    // ✅ 18 सेकंड वीडियो = 144 frames @ 8fps
+    var createResp = await fetch("https://apihub.agnes-ai.com/v1/videos", {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer " + keys.agnes,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model: "agnes-video-v2.0",
+            prompt: en,
+            height: 768,
+            width: 1152,
+            num_frames: 144,
+            frame_rate: 8,
+            duration: 18,
+            seconds: 18,
+            num_inference_steps: 30
+        })
+    });
+    if(!createResp.ok) throw new Error("कलाकार " + createResp.status);
+
+    var taskData = await createResp.json();
+    var videoId = taskData.video_id || taskData.id ||
+                  (taskData.data && taskData.data.video_id);
+    if(!videoId) throw new Error("वीडियो ID नहीं मिली");
+
+    // ✅ Hard timeout — अधिकतम 5 मिनट
+    var startTime = Date.now();
+    var MAX_WAIT_MS = 5 * 60 * 1000;
+    var attempts = 0;
+    var MAX_ATTEMPTS = 200;
+
+    while(true){
+        if(myToken && myToken !== sendToken) throw new Error("रद्द किया गया");
+        if(Date.now() - startTime > MAX_WAIT_MS) throw new Error("वीडियो बनाने में 5 मिनट से ज़्यादा समय लगा।");
+        if(attempts >= MAX_ATTEMPTS) throw new Error("वीडियो बनाने की सीमा पार हो गई।");
+
+        var delay = attempts < 10 ? 3000 : (attempts < 30 ? 5000 : 8000);
+        await new Promise(function(r){ setTimeout(r, delay); });
+
+        if(myToken && myToken !== sendToken) throw new Error("रद्द किया गया");
+
+        try{
+            var r = await fetch(
+                "https://apihub.agnes-ai.com/agnesapi?video_id=" + videoId,
+                {headers: {"Authorization": "Bearer " + keys.agnes}}
+            );
+            if(!r.ok){ attempts++; continue; }
+
+            var d = await r.json();
+            var status = (d.status || d.state || "").toLowerCase();
+
+            if(status === "failed" || status === "error" || status === "cancelled")
+                throw new Error("वीडियो बनाने में असफलता");
+
+            var url = d.video_url || d.url ||
+                      (d.data && (d.data.video_url || d.data.url));
+            if(url){
+                return '<video controls autoplay loop muted playsinline src="' + url + '"></video>' +
+                       '<br><small>✅ वीडियो तैयार (18 सेकंड)<br>' +
+                       '⚠️ यह वीडियो 1-2 दिन में ख़त्म हो जाएगा — डाउनलोड कर लो।</small>';
+            }
+        }catch(e){
+            // घातक errors को आगे भेजो, बाक़ी network glitch पर retry
+            if(e.message && (
+                e.message.indexOf("असफलता") >= 0 ||
+                e.message.indexOf("रद्द") >= 0 ||
+                e.message.indexOf("समय") >= 0 ||
+                e.message.indexOf("सीमा") >= 0
+            )) throw e;
+        }
+        attempts++;
+    }
+}
+async function callPollinationsVideo(text, keys, myToken){
+    if(!keys.pollinations || (keys.pollinations.indexOf("pk_") !== 0 && keys.pollinations.indexOf("sk_") !== 0))
+        throw new Error("Pollinations key नहीं");
+    updateTyping("🌐 हिंदी → अंग्रेज़ी...");
+    var en = await hindiToEnglishPrompt(text, keys, true);
+    updateTyping("🎬 वीडियो बन रहा है... 30-60 सेकंड");
+    var prompt = encodeURIComponent(en);
+    var endpoints = [
+        "https://gen.pollinations.ai/video/" + prompt + "?model=p-video-720p&key=" + keys.pollinations,
+        "https://gen.pollinations.ai/video/" + prompt + "?key=" + keys.pollinations,
+        "https://video.pollinations.ai/prompt/" + prompt + "?key=" + keys.pollinations
+    ];
+    for(var i = 0; i < endpoints.length; i++){
+        try{
+            var r = await fetch(endpoints[i], {method: "GET"});
+            if(r.ok){
+                var ct = r.headers.get("content-type") || "";
+                if(ct.indexOf("video") >= 0 || ct.indexOf("mp4") >= 0){
+                    if(myToken && myToken !== sendToken) throw new Error("रद्द किया गया");
+                    return '<video controls autoplay loop muted playsinline src="' + r.url + '"></video>' +
+                           '<br><small>✅ वीडियो तैयार</small>';
+                }
+                var t = await r.text();
+                try{
+                    var j = JSON.parse(t);
+                    var url = j.url || j.video_url ||
+                              (j.data && (j.data.url || (j.data[0] && j.data[0].url))) ||
+                              j.output;
+                    if(url){
+                        if(myToken && myToken !== sendToken) throw new Error("रद्द किया गया");
+                        return '<video controls autoplay loop muted playsinline src="' + url + '"></video>' +
+                               '<br><small>✅ वीडियो तैयार</small>';
+                    }
+                }catch(pe){}
+            }
+        }catch(e){}
+    }
+    throw new Error("Pollinations video fail");
+}
+async function makeVideoWithFallback(text, keys, myToken){
+    if(keys.pollinations && (keys.pollinations.indexOf("pk_") === 0 || keys.pollinations.indexOf("sk_") === 0)){
+        try{
+            var pol = await callPollinationsVideo(text, keys, myToken);
+            if(pol) return pol;
+        }catch(e){ console.warn("Pollinations fail, Agnes पर switch:", e.message); }
+    }
+    if(keys.agnes && keys.agnes.indexOf("sk-") === 0){
+        try{
+            return await callAgnesVideo(text, keys, myToken);
+        }catch(e){
+            var emsg = String(e.message || e).toLowerCase();
+            if(/429|rate|limit|quota|exhaust|too many|बहुत ज़्यादा/.test(emsg))
+                throw new Error("LIMIT_OVER");
+            throw e;
+        }
+    }
+    throw new Error("कोई video AI उपलब्ध नहीं");
+}
+
+// ============ ✏️ Agnes फ़ोटो एडिट (only) ============
+async function callAgnesEdit(file, editPrompt, keys){
+    if(!keys.agnes || keys.agnes.indexOf("sk-") !== 0)
+        throw new Error("कलाकार (Agnes AI) चाबी सेट नहीं है।");
+    updateTyping("🌐 हिंदी → अंग्रेज़ी...");
+    var en = await hindiToEnglishPrompt(editPrompt, keys, false);
+    updateTyping("⬆️ फ़ोटो तैयार...");
+    var b64Full;
+    try{ b64Full = await prepareImage(file, 1600); }
+    catch(e){ b64Full = await fileToBase64Full(file); }
+    updateTyping("✏️ फ़ोटो एडिट हो रही है... 20-40 सेकंड");
+    var full = "Edit: " + en + ". Keep EXACT SAME face, eyes, nose, skin, hair. DO NOT change the face. ONLY change what was asked.";
+    var r = await fetch("https://apihub.agnes-ai.com/v1/images/generations", {
+        method: "POST",
+        headers: {"Authorization": "Bearer " + keys.agnes, "Content-Type": "application/json"},
+        body: JSON.stringify({
+            model: "agnes-image-2.5-flash",
+            prompt: full,
+            size: "2K",
+            ratio: "1:1",
+            extra_body: {image: [b64Full], response_format: "url"}
+        })
+    });
+    if(!r.ok) throw new Error("कलाकार एडिट " + r.status);
+    var d = await r.json();
+    var url = d.data && d.data[0] && d.data[0].url;
+    if(!url) throw new Error("एडिट URL नहीं मिला");
+    return '<img src="' + url + '" alt=""><br><small>✏️ चेहरा वही, बदलाव सिर्फ़ जो कहा</small>';
+}
+
+// ============ भेजना ============
+async function sendMessage(){
+    var myToken = ++sendToken;
+    var input = document.getElementById("input");
+    var text = input.value.trim();
+    var file = attachedFile;
+    var shot = pendingScreenshot;
+    pendingScreenshot = null;
+    if(!text && !file && !shot) return;
+    if(!currentChatId) currentChatId = createNewChat();
+    var keys = loadKeys();
+
+    var hist = getHistory();
+    input.value = "";
+    input.style.height = "auto";
+    input.placeholder = "कुछ भी पूछो... (🎤 दबाकर बोल सकते हो)";
+
+    var userShow = text || "";
+    if(file) userShow = "📎 " + file.name + (text ? "\n\n" + text : "");
+    if(shot) userShow = "📱 [स्क्रीनशॉट]" + (text ? "\n\n" + text : "");
+    addMessage("user", userShow);
+    addTyping();
+    var btn = document.getElementById("sendBtn");
+    btn.disabled = true;
+
+    try{
+        var reply = "", usedGroqFallback = false;
+
+        if(shot){
+            updateTyping("👁️ स्क्रीन देख रहा हूँ...");
+            try{ reply = await callGemini(text || "इस स्क्रीन में क्या है? हिंदी में बताओ।", keys, shot, "image/jpeg", hist); }
+            catch(ge){
+                usedGroqFallback = true;
+                try{ reply = await callGroqVision(text || "इस स्क्रीन में क्या है? हिंदी में बताओ।", shot, "image/jpeg", keys, CAPABILITY, hist); }
+                catch(gv){ reply = "❌ स्क्रीन पढ़ने में दिक़्क़त।"; }
+            }
+        }
+        else if(file){
+            var ftype = file.type || "", fname = file.name || "";
+            var isImageByExt = /\.(jpg|jpeg|png|webp|gif|bmp|heic|heif|avif|tiff|tif)$/i.test(fname);
+            var looksLikeImage = (ftype.indexOf("image/") === 0) || (isImageByExt && (ftype === "" || ftype.indexOf("image/") !== 0));
+            var isVideoByExt = /\.(mp4|mov|avi|mkv|webm|3gp|m4v)$/i.test(fname);
+            var looksLikeVideo = (ftype.indexOf("video/") === 0) || (isVideoByExt && (ftype === "" || ftype.indexOf("video/") !== 0));
+            var looksLikePdf = (ftype === "application/pdf") || /\.pdf$/i.test(fname);
+            var looksLikeText = (ftype.indexOf("text/") === 0) || /\.(txt|md|csv|json|py|js|ts|java|cpp|c|h|html|css|xml|log|ini|yml|yaml)$/i.test(fname);
+            var looksLikeAudio = (ftype.indexOf("audio/") === 0);
+
+            var editVerb = /(edit|एडिट|बदलो|बदल\s*दो|badlo|badal\s*do|लगाओ|लगा\s*दो|lagao|laga\s*do|कर\s*दो|kar\s*do|बना\s*दो|bana\s*do|हटाओ|हटा\s*दो|hatao|hata\s*do|मिटाओ|mitao|जोड़ो|jodo|जोड़\s*दो|रंग\s*बदलो|रंग\s*कर\s*दो|color\s*change|change\s*the|make\s*it|turn\s*it)/i.test(text);
+            var isQuestionMsg = /(क्या|क्यों|कैसे|कौन|कहाँ|कहां|कितना|कितनी|कितने|किस|what|how|why|which|who|where|\?)/i.test(text);
+            var isEdit = editVerb && !isQuestionMsg && !/नहीं|मत|nahi|mat/i.test(text);
+
+            if(isEdit && looksLikeImage){
+                if(!keys.agnes || keys.agnes.indexOf("sk-") !== 0){
+                    reply = "❌ **फ़ोटो एडिट के लिए कलाकार (Agnes AI) चाहिए।**\n\n⚙️ सेटिंग्स में Agnes Key डालें।";
+                } else {
+                    try{ reply = await callAgnesEdit(file, text, keys); }
+                    catch(ae){ reply = "❌ एडिट विफल: " + ae.message; }
+                }
+            }
+            else if(looksLikeImage){
+                updateTyping("👁️ फ़ोटो तैयार हो रही है...");
+                var b64;
+                try{ b64 = await prepareImage(file, 1200); }
+                catch(pe){
+                    removeTyping();
+                    addMessage("assistant", "⚠️ " + pe.message, "त्रुटि");
+                    if(myToken === sendToken) removeFile();
+                    btn.disabled = false;
+                    return;
+                }
+                updateTyping("👁️ फ़ोटो देख रहा हूँ...");
+                try{ reply = await callGemini(text || "इस फ़ोटो में क्या है? हिंदी में बताओ।", keys, b64, "image/jpeg", hist); }
+                catch(ge){
+                    usedGroqFallback = true;
+                    try{ reply = await callGroqVision(text || "इस फ़ोटो में क्या है? हिंदी में बताओ।", b64, "image/jpeg", keys, CAPABILITY, hist); }
+                    catch(gv){ reply = "❌ फ़ोटो पढ़ने में दिक़्क़त।"; }
+                }
+            }
+            else if(looksLikePdf){
+                updateTyping("📕 PDF पढ़ रहा हूँ...");
+                try{
+                    var b64p = await fileToBase64(file);
+                    reply = await callGemini(text || "इस PDF में क्या है? हिंदी में विस्तार से बताओ।", keys, b64p, "application/pdf", hist);
+                }catch(ge){ reply = "⚠️ PDF पढ़ने में दिक़्क़त।"; }
+            }
+            else if(looksLikeVideo){
+                updateTyping("🎬 वीडियो से frame निकाल रहा हूँ...");
+                try{
+                    var frameB64 = await videoToFrame(file);
+                    updateTyping("👁️ frame देख रहा हूँ...");
+                    try{ reply = await callGemini(text || "इस वीडियो के frame में क्या दिख रहा है? हिंदी में विस्तार से बताओ।", keys, frameB64, "image/jpeg", hist); }
+                    catch(ge){
+                        usedGroqFallback = true;
+                        reply = await callGroqVision(text || "इस frame में क्या दिख रहा है? हिंदी में बताओ।", frameB64, "image/jpeg", keys, CAPABILITY, hist);
+                    }
+                }catch(ve){ reply = "⚠️ वीडियो से frame नहीं निकाल पाया: " + ve.message; }
+            }
+            else if(looksLikeText){
+                updateTyping("📄 फ़ाइल पढ़ रहा हूँ...");
+                try{
+                    var contentTxt = await fileToText(file);
+                    var filePrompt = CAPABILITY + "\n\nफ़ाइल: " + fname + "\n\nसामग्री:\n\"\"\"\n" + String(contentTxt).substring(0, 40000) + "\n\"\"\"\n\n" + (text || "इसमें क्या है? हिंदी में समझाओ।");
+                    try{ reply = await callGemini(filePrompt, keys, null, null, hist); }
+                    catch(ge){
+                        usedGroqFallback = true;
+                        reply = await callGroq(String(contentTxt).substring(0, 8000), keys, CAPABILITY + "\n\n" + (text || "इस फ़ाइल में क्या है?"), hist);
+                    }
+                }catch(te){ reply = "⚠️ फ़ाइल पढ़ने में दिक़्क़त।"; }
+            }
+            else if(looksLikeAudio){ reply = "⚠️ ऑडियो फ़ाइल सीधे नहीं पढ़ सकता।"; }
+            else { reply = "⚠️ इस फ़ाइल प्रकार को मैं नहीं पढ़ सकता।"; }
+            if(text && text.length > 6 && !isEdit) lastPrompt = text;
+            if(myToken === sendToken) removeFile();
+        }
+        else {
+            // कोड detection
+            var codeIndicators = /(function\s|var\s|const\s|let\s|\bdef\s|\bclass\s|import\s|export\s|return\s|if\s*\(|for\s*\(|while\s*\(|<\w+>|<!DOCTYPE|<\/html>|<\/body>|<\/script>|\{\s*[\s\S]*\}|=>|#include|public\s|private\s|void\s|\bint\s|\bprint\(|console\.log|System\.out|;\s*\n)/.test(text);
+            var looksLikeCode = false;
+            if(codeIndicators && text.length > 40) looksLikeCode = true;
+            if(text.length > 5000 && /[{}();<>]/.test(text)) looksLikeCode = true;
+            if(/(यह|इस|ये)\s*कोड|is\s*code|code\s*dekho|code\s*batao|कोड\s*(देखो|बताओ)/i.test(text)) looksLikeCode = true;
+
+            if(looksLikeCode){
+                updateTyping("💻 कोड समझ रहा हूँ...");
+                if(text.length > 60000){
+                    reply = "⚠️ **कोड बहुत बड़ा है** (" + Math.round(text.length / 1000) + " हज़ार अक्षर)।\n\n" +
+                            "मुख्य दिमाग़ एक बार में इतना बड़ा कोड नहीं पढ़ सकता।\n\n" +
+                            "**क्या करें:**\n• कोड को छोटे हिस्सों में भेजो (एक function या class)\n• या सिर्फ़ उस हिस्से को भेजो जहाँ गड़बड़ी है";
+                    removeTyping();
+                    addMessage("assistant", reply, "त्रुटि");
+                    btn.disabled = false;
+                    return;
+                }
+                var codePrompt = CODE_CAPABILITY + "\n\n=== कोड ===\n" + text + "\n=== कोड ख़त्म ===";
+                var geminiErrMsg = "";
+                try{
+                    reply = await callGemini(codePrompt, keys, null, null, null);
+                }catch(e1){
+                    geminiErrMsg = String(e1.message || e1);
+                    if(isRateLimit(e1) || /429|rate|quota/i.test(geminiErrMsg)){
+                        reply = "⚠️ **अभी मुख्य दिमाग़ व्यस्त है** (लिमिट ख़त्म)।\n\n🕐 **कुछ मिनट बाद फिर से कोड भेजो।**";
+                        removeTyping();
+                        addMessage("assistant", reply, "त्रुटि");
+                        btn.disabled = false;
+                        return;
+                    }
+                    if(text.length <= 18000){
+                        try{
+                            usedGroqFallback = true;
+                            reply = await callGroq(text, keys, CODE_CAPABILITY, null);
+                        }catch(e2){
+                            reply = "❌ **कोड समझ नहीं पाया।**\n\n• मुख्य दिमाग़: " + geminiErrMsg + "\n• बैकअप: " + String(e2.message || e2) + "\n\nकृपया कुछ देर बाद फिर से try करो।";
+                        }
+                    } else {
+                        reply = "⚠️ **कोड बहुत बड़ा है बैकअप के लिए** (" + Math.round(text.length / 1000) + " हज़ार अक्षर)।\n\n• मुख्य दिमाग़ फेल: " + geminiErrMsg + "\n\n**क्या करें:** कोड को छोटे हिस्सों में भेजो।";
+                    }
+                }
+                if(myToken !== sendToken){ btn.disabled = false; return; }
+                removeTyping();
+                addMessage("assistant", reply, usedGroqFallback ? "बैकअप सक्रिय" : "💻 कोड समझा");
+                btn.disabled = false;
+                return;
+            }
+
+            var webSearchType = needsWebSearch(text);
+            if(webSearchType === "youtube"){
+                updateTyping("🎥 YouTube वीडियो देख रहा हूँ...");
+                var ytMatch = text.match(/(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/i);
+                var ytUrl = null;
+                if(ytMatch) ytUrl = "https://www.youtube.com/watch?v=" + ytMatch[4];
+                if(ytUrl){
+                    try{ reply = await callGemini("इस YouTube वीडियो में क्या है? हिंदी में विस्तार से बताओ।", keys, null, null, null, false, ytUrl); }
+                    catch(ye){ reply = "⚠️ YouTube वीडियो नहीं पढ़ पाया: " + ye.message; }
+                } else { reply = "⚠️ YouTube लिंक सही नहीं।"; }
+            }
+            else if(webSearchType === "search"){
+                updateTyping("🔍 ताज़ा जानकारी खोज रहा हूँ...");
+                try{ reply = await callGemini(CAPABILITY + "\n\nउपयोगकर्ता: " + text, keys, null, null, hist, true); }
+                catch(se){
+                    usedGroqFallback = true;
+                    try{ reply = await callGroq(text, keys, CAPABILITY, hist); }
+                    catch(ge){ reply = "⚠️ ताज़ा जानकारी नहीं मिल पाई।"; }
+                }
+            }
+            else {
+                updateTyping("🤔 समझ रहा हूँ...");
+                var intent = await votingDetectIntent(text, keys);
+                if(intent === "STOP_MUSIC"){
+                    stopAllMusic();
+                    reply = "⏹ संगीत बंद कर दिया।";
+                }
+                else if(intent === "UNKNOWN") reply = "माफ़ करना, मैं समझ नहीं पाया। कृपया फिर से बताओ।";
+                else if(intent === "PLAY_MUSIC"){
+                    if(/गाना|गाने|गीत|song/i.test(text)){
+                        reply = '🎵 अभी सिर्फ़ धुन (instrumental) बज सकती है, गाना (vocals) नहीं।<br><br>' + createMusicPlayer(text);
+                    } else {
+                        reply = createMusicPlayer(text);
+                    }
+                }
+                else if(intent === "CREATE_IMAGE"){
+                    try{ reply = await makeImageWithFallback(text, keys); }
+                    catch(ae){ reply = "❌ तस्वीर बनाने में दिक़्क़त: " + ae.message; }
+                }
+                else if(intent === "CREATE_VIDEO"){
+                    var stripped = text.replace(/वीडियो|video|बनाओ|banao|बना\s*दो|बना|दो|करो|बजाओ|एक|का|की|के|मुझे|मुझको|please|कृपया|हाई\s*क्वालिटी|लो\s*क्वालिटी|high\s*quality|low\s*quality/gi, "").replace(/\s+/g, " ").trim();
+                    if(stripped.length < 5){
+                        reply = "🎬 **कैसा वीडियो बनाना है?**\n\nकृपया विवरण दो — जैसे:\n• समुद्र के किनारे सूरज डूबता हुआ\n• शेर जंगल में दौड़ता हुआ\n• बारिश में नाचती लड़की";
+                    } else {
+                        if(text && text.length > 6) lastPrompt = text;
+                        try{ reply = await makeVideoWithFallback(text, keys, myToken); }
+                        catch(ve){
+                            if(ve.message === "LIMIT_OVER"){
+                                reply = "⚠️ **आज का वीडियो बनाने का लिमिट ख़त्म हो गया।**\n\n🕐 **कल फिर आइए** — कल नया लिमिट मिलेगा।";
+                            } else {
+                                reply = "🎬 वीडियो अभी नहीं बन पाया।\n\nकृपया थोड़ी देर बाद फिर से बोलो।\n\n_विवरण: " + ve.message + "_";
+                            }
+                        }
+                    }
+                }
+                else {
+                    updateTyping("💬 सोच रहा हूँ...");
+                    try{ reply = await callGemini(CAPABILITY + "\n\nउपयोगकर्ता: " + text, keys, null, null, hist); }
+                    catch(e1){
+                        usedGroqFallback = true;
+                        reply = await callGroq(text, keys, CAPABILITY, hist);
+                    }
+                }
+            }
+        }
+
+        if(myToken !== sendToken){ btn.disabled = false; return; }
+        removeTyping();
+        var tag = "🤖";
+        if(/^<video/.test(reply)) tag = "🎬 वीडियो";
+        else if(/^<img/.test(reply)) tag = "🎨 तस्वीर";
+        else if(/^<div style="background:#e3f2fd/.test(reply) && reply.indexOf("musicbtn_") > 0) tag = "🎵 संगीत";
+        else if(/सोर्स:/.test(reply)) tag = "🔍 ताज़ा";
+        else if(usedGroqFallback) tag = "बैकअप सक्रिय";
+        if(usedGroqFallback && tag !== "बैकअप सक्रिय") tag = "बैकअप • " + tag;
+        addMessage("assistant", reply, tag);
+    }catch(e){
+        if(myToken !== sendToken){ btn.disabled = false; return; }
+        removeTyping();
+        if(isRateLimit(e)) addMessage("assistant", "⚠️ **अभी जवाब देने में दिक़्क़त हो रही है।**", "त्रुटि");
+        else addMessage("assistant", "❌ " + e.message, "त्रुटि");
+    }finally{
+        if(myToken === sendToken) btn.disabled = false;
+    }
+}
+
+function useExample(el){
+    document.getElementById("input").value = el.textContent;
+    sendMessage();
+}
+var inputEl = document.getElementById("input");
+inputEl.addEventListener("input", function(){
+    this.style.height = "auto";
+    this.style.height = Math.min(this.scrollHeight, 120) + "px";
 });
-inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+inputEl.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && !e.shiftKey && !e.isComposing){
+        e.preventDefault();
+        sendMessage();
+    }
 });
 
-// शुरुआत में चाबी जाँच
-if (!getKeys().gemini) setTimeout(openSettings, 800);
+// Init
+loadChats();
+if(Object.keys(allChats).length === 0) newChat();
+else renderSessions();
+var keys = loadKeys();
+if(!keys.gemini || !keys.groq || !keys.agnes) setTimeout(openSettings, 600);
 </script>
-
 </body>
-</html>
+    </html>
